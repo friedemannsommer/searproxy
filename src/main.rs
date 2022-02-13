@@ -1,0 +1,94 @@
+use tracing::debug;
+
+mod assets;
+mod lib;
+mod model;
+mod server;
+mod templates;
+
+fn main() {
+    let config = get_config();
+
+    init_logging(&config);
+    debug!("{:?}", &config);
+    set_shared_values(config);
+    server::start_http_service();
+}
+
+fn get_config() -> model::Config<'static, 'static, 'static> {
+    use clap::Parser;
+
+    let args = model::CliArgs::parse();
+
+    model::Config {
+        follow_redirect: args.follow_redirect,
+        hmac_secret: std::borrow::Cow::Owned(
+            base64::decode(&args.hmac_secret).expect("HMAC secret couldn't be [base64] decoded"),
+        ),
+        listen_address: std::borrow::Cow::Owned(args.listen_address),
+        log_level: args.log_level,
+        request_timeout: args.request_timeout,
+        proxy_address: args.proxy_address.map(std::borrow::Cow::Owned),
+    }
+}
+
+fn init_logging(config: &model::Config) {
+    let subscriber = tracing_subscriber::FmtSubscriber::builder()
+        .with_max_level(config.log_level)
+        .with_target(true)
+        .with_thread_ids(false)
+        .with_thread_names(false)
+        .with_span_events(tracing_subscriber::fmt::format::FmtSpan::ACTIVE)
+        .finish();
+
+    tracing::subscriber::set_global_default(subscriber)
+        .expect("tracing & logging subscriber registration failed");
+}
+
+fn set_shared_values(config: model::Config<'static, 'static, 'static>) {
+    if lib::HMAC
+        .set(hmac_sha256::HMAC::new(config.hmac_secret.as_ref()))
+        .is_err()
+    {
+        panic!("Failed to set HMAC instance");
+    }
+
+    let mut request_client_builder = reqwest::Client::builder()
+        .referer(false)
+        .deflate(true)
+        .gzip(true)
+        .brotli(true)
+        .tcp_nodelay(true)
+        .tcp_keepalive(std::time::Duration::from_secs(
+            (config.request_timeout as u64) * 2,
+        ))
+        .timeout(std::time::Duration::from_secs(
+            config.request_timeout as u64,
+        ))
+        .connect_timeout(std::time::Duration::from_secs(
+            config.request_timeout as u64,
+        ))
+        .pool_idle_timeout(std::time::Duration::from_secs(
+            (config.request_timeout as u64) * 4,
+        ))
+        .user_agent(
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:91.0) Gecko/20100101 Firefox/91.0",
+        );
+
+    if let Some(proxy_address) = config.proxy_address.as_deref() {
+        request_client_builder = request_client_builder
+            .proxy(reqwest::Proxy::all(proxy_address).expect("Couldn't create proxy"));
+    }
+
+    lib::REQUEST_CLIENT
+        .set(
+            request_client_builder
+                .build()
+                .expect("Request client initialization failed"),
+        )
+        .expect("Failed to set request client");
+
+    lib::GLOBAL_CONFIG
+        .set(config)
+        .expect("Failed to set global config");
+}
