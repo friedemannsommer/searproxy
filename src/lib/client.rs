@@ -1,13 +1,13 @@
-use crate::model::IndexHttpArgs;
 use futures_util::StreamExt;
 use tracing::{debug, span};
 
-const MAX_REDIRECTS: u8 = 30;
+use crate::lib::{
+    rewrite_css::{CssRewrite, RewriteCssError},
+    rewrite_html::HtmlRewrite,
+};
 
 #[derive(thiserror::Error, Debug)]
 pub enum ClientError {
-    #[error("config is uninitialized")]
-    GlobalConfig,
     #[error("HMAC instance uninitialized")]
     HmacInstance,
     #[error("hex decode failed")]
@@ -28,14 +28,10 @@ pub enum ClientError {
     MimeParse(#[from] mime::FromStrError),
     #[error("UTF-8 decoding failed")]
     Utf8Decode(#[from] std::str::Utf8Error),
-    #[error("CSS parsing failed")]
-    CssParse,
-    #[error("CSS formatting / rewriting failed")]
-    CssPrint,
     #[error("HTML rewriting failed")]
     HtmlRewrite(#[from] lol_html::errors::RewritingError),
-    #[error("Querystring encoding failed")]
-    QuerystringEncoding(#[from] serde_qs::Error),
+    #[error("CSS rewriting failed")]
+    CssRewrite(#[from] RewriteCssError),
 }
 
 pub struct ClientResponse {
@@ -43,11 +39,6 @@ pub struct ClientResponse {
     pub content_disposition: Option<reqwest::header::HeaderValue>,
     pub content_type: mime::Mime,
 }
-
-static IMG_SRCSET_REGEX: once_cell::sync::Lazy<regex::Regex> = once_cell::sync::Lazy::new(|| {
-    regex::Regex::new(r"(?P<url>[\w#!:.?+=&%@!\-/]+)(\s+(?:[0-9]+\.)?[0-9]+[xw]\s*[,$]?|$)")
-        .expect("RegExp compilation failed")
-});
 
 pub async fn fetch_validate_url(
     method: reqwest::Method,
@@ -116,32 +107,11 @@ async fn fetch_transform_url(
         .await?;
     let status_code = response.status().as_u16();
 
-    match status_code {
-        301 | 302 | 303 | 307 | 308 => {
-            if depth < MAX_REDIRECTS
-                && match crate::lib::GLOBAL_CONFIG.get() {
-                    Some(config) => config.follow_redirect,
-                    None => return Err(ClientError::GlobalConfig),
-                }
-            {
-                if let Some(location) = response.headers().get(reqwest::header::LOCATION) {
-                    let next_url = url::Url::parse(url)?.join(location.to_str()?)?;
-
-                    return fetch_transform_url(
-                        method,
-                        next_url.as_str(),
-                        acceptable_languages,
-                        depth + 1,
-                    )
-                    .await;
-                }
-            }
-
-            Err(ClientError::UnexpectedStatusCode(status_code))
-        }
-        200 => transform_response(response).await,
-        _ => Err(ClientError::UnexpectedStatusCode(status_code)),
+    if status_code == 200 {
+        return transform_response(response).await;
     }
+
+    Err(ClientError::UnexpectedStatusCode(status_code))
 }
 
 async fn transform_response(response: reqwest::Response) -> Result<ClientResponse, ClientError> {
@@ -167,7 +137,7 @@ async fn transform_response(response: reqwest::Response) -> Result<ClientRespons
             }
         } else if content_type == mime::TEXT_CSS || content_type == mime::TEXT_CSS_UTF_8 {
             ClientResponse {
-                body: transform_stylesheet(response).await?,
+                body: transform_css(response).await?,
                 content_disposition: None,
                 content_type,
             }
@@ -189,78 +159,20 @@ async fn transform_html(response: reqwest::Response) -> Result<bytes::Bytes, Cli
     )
     .entered();
     let base_url = response.url().clone();
-    let transform_href = |
-        element: &mut lol_html::html_content::Element,
-    | -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        element.set_attribute("href", &rewrite_url(&base_url, &element.get_attribute("href").unwrap())?)?;
-        Ok(())
-    };
-    let mut output_vec = Vec::default();
-    let mut rewriter = lol_html::HtmlRewriter::new(
-        lol_html::Settings {
-            element_content_handlers: vec![
-                lol_html::element!("a[href]", transform_href),
-                lol_html::element!("link[href]", transform_href),
-                lol_html::element!("script", html_remove_element),
-                lol_html::element!("applet", html_remove_element),
-                lol_html::element!("canvas", html_remove_element),
-                lol_html::element!("embed", html_remove_element),
-                lol_html::element!("math", html_remove_element),
-                lol_html::element!("svg", html_remove_element),
-                lol_html::element!("img[src]", |img| {
-                    img.set_attribute(
-                        "src",
-                        &rewrite_url(&base_url, &img.get_attribute("src").unwrap())?,
-                    )?;
-                    Ok(())
-                }),
-                lol_html::element!("img[srcset]", |img| {
-                    let src_set_values = img.get_attribute("srcset").unwrap();
-                    let mut output = String::with_capacity(src_set_values.len());
-                    let mut offset = 0;
-
-                    for group in IMG_SRCSET_REGEX.captures_iter(&src_set_values) {
-                        if let Some(matched_url) = group.name("url") {
-                            let proxied_url = rewrite_url(&base_url, matched_url.as_str())?;
-
-                            output.push_str(&src_set_values[offset..matched_url.start()]);
-                            output.push_str(&proxied_url);
-                            offset = matched_url.end();
-                        }
-                    }
-
-                    output.push_str(&src_set_values[offset..]);
-                    img.set_attribute("srcset", &output)?;
-
-                    Ok(())
-                }),
-            ],
-            ..lol_html::Settings::default()
-        },
-        |chunk: &[u8]| output_vec.extend_from_slice(chunk),
-    );
+    let mut rewriter = HtmlRewrite::new(&base_url);
     let mut stream = response.bytes_stream();
 
     while let Some(chunk_res) = stream.next().await {
         rewriter.write(chunk_res?.as_ref())?;
     }
 
-    rewriter.end()?;
-
     Ok(bytes::Bytes::from(minify_html::minify(
-        &output_vec,
+        &rewriter.end()?.borrow(),
         &crate::lib::MINIFY_CONFIG,
     )))
 }
 
-fn html_remove_element(
-    element: &mut lol_html::html_content::Element,
-) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    element.remove();
-    Ok(())
-}
-
-async fn transform_stylesheet(response: reqwest::Response) -> Result<bytes::Bytes, ClientError> {
+async fn transform_css(response: reqwest::Response) -> Result<bytes::Bytes, ClientError> {
     let _span = tracing::span!(
         tracing::Level::TRACE,
         "transform_stylesheet",
@@ -268,91 +180,12 @@ async fn transform_stylesheet(response: reqwest::Response) -> Result<bytes::Byte
     )
     .entered();
     let base_url = response.url().clone();
-    let raw_css_text = response.text().await?;
-    // todo: the CSS parser seemingly doesn't support browser quirks ("quirks mode")
-    let mut stylesheet = match parcel_css::stylesheet::StyleSheet::parse(
-        String::from("_sp_main.css"),
-        &raw_css_text,
-        parcel_css::stylesheet::ParserOptions {
-            css_modules: true,
-            custom_media: false,
-            nesting: true,
-        },
-    ) {
-        Ok(value) => value,
-        Err(err) => {
-            debug!("{:?}", err);
-            return Err(ClientError::CssParse);
-        }
-    };
+    let mut rewriter = CssRewrite::new(&base_url);
+    let mut stream = response.bytes_stream();
 
-    for rule in &mut stylesheet.rules.0 {
-        match rule {
-            parcel_css::rules::CssRule::Import(import_rule) => {
-                import_rule.url =
-                    cssparser::CowRcStr::from(rewrite_url(&base_url, &import_rule.url)?);
-            }
-            parcel_css::rules::CssRule::FontFace(font_face_rule) => {
-                for property in &mut font_face_rule.properties {
-                    if let parcel_css::rules::font_face::FontFaceProperty::Source(sources) =
-                        property
-                    {
-                        for source in sources {
-                            if let parcel_css::rules::font_face::Source::Url(remote_source) = source
-                            {
-                                remote_source.url.url = cssparser::CowRcStr::from(rewrite_url(
-                                    &base_url,
-                                    &remote_source.url.url,
-                                )?);
-                            }
-                        }
-                    }
-                }
-            }
-            _ => {}
-        }
+    while let Some(chunk_res) = stream.next().await {
+        rewriter.write(chunk_res?.as_ref())?;
     }
 
-    Ok(bytes::Bytes::from(
-        match stylesheet.to_css(parcel_css::stylesheet::PrinterOptions {
-            analyze_dependencies: false,
-            minify: true,
-            pseudo_classes: None,
-            source_map: false,
-            targets: None,
-        }) {
-            Ok(printer_result) => printer_result,
-            Err(err) => {
-                debug!("{:?}", err);
-                return Err(ClientError::CssPrint);
-            }
-        }
-        .code,
-    ))
-}
-
-fn rewrite_url(base_url: &url::Url, url: &str) -> Result<String, ClientError> {
-    let _span = tracing::span!(
-        tracing::Level::TRACE,
-        "rewrite_url",
-        http.base_url = base_url.as_str(),
-        http.url = url
-    )
-    .entered();
-    let mut hmac = match crate::lib::HMAC.get() {
-        Some(instance) => instance.clone(),
-        None => return Err(ClientError::HmacInstance),
-    };
-    let next_base_url = base_url.join(url)?;
-    let next_url = next_base_url.to_string();
-
-    hmac.update(next_url.as_bytes());
-
-    Ok(format!(
-        "./?{}",
-        serde_qs::to_string(&IndexHttpArgs {
-            hash: Some(hex::encode(&hmac.finalize())),
-            url: Some(next_url)
-        })?
-    ))
+    Ok(bytes::Bytes::from(rewriter.end()?))
 }

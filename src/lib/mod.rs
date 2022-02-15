@@ -1,5 +1,8 @@
 mod client;
 pub mod macros;
+mod rewrite_css;
+mod rewrite_html;
+mod rewrite_url;
 mod shared;
 
 pub use client::{fetch_validate_url, ClientError};

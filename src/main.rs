@@ -18,7 +18,7 @@ fn main() {
 fn get_config() -> model::Config<'static, 'static, 'static> {
     use clap::Parser;
 
-    let args = model::CliArgs::parse();
+    let args: model::CliArgs = model::CliArgs::parse();
 
     model::Config {
         follow_redirect: args.follow_redirect,
@@ -58,9 +58,14 @@ fn set_shared_values(config: model::Config<'static, 'static, 'static>) {
         .deflate(true)
         .gzip(true)
         .brotli(true)
+        .redirect(if config.follow_redirect {
+            reqwest::redirect::Policy::limited(15)
+        } else {
+            reqwest::redirect::Policy::none()
+        })
         .tcp_nodelay(true)
         .tcp_keepalive(std::time::Duration::from_secs(
-            (config.request_timeout as u64) * 2,
+            ((config.request_timeout as u64) * 2).max(60),
         ))
         .timeout(std::time::Duration::from_secs(
             config.request_timeout as u64,
@@ -69,7 +74,7 @@ fn set_shared_values(config: model::Config<'static, 'static, 'static>) {
             config.request_timeout as u64,
         ))
         .pool_idle_timeout(std::time::Duration::from_secs(
-            (config.request_timeout as u64) * 4,
+            ((config.request_timeout as u64) * 4).max(60),
         ))
         .user_agent(
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:91.0) Gecko/20100101 Firefox/91.0",
@@ -77,7 +82,7 @@ fn set_shared_values(config: model::Config<'static, 'static, 'static>) {
 
     if let Some(proxy_address) = config.proxy_address.as_deref() {
         request_client_builder = request_client_builder
-            .proxy(reqwest::Proxy::all(proxy_address).expect("Couldn't create proxy"));
+            .proxy(reqwest::Proxy::all(proxy_address).expect("Can't use given proxy config"));
     }
 
     lib::REQUEST_CLIENT
