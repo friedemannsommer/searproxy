@@ -3,6 +3,10 @@ name = "searproxy"
 version = "0.1.0"
 edition = "2021"
 
+[profile.release]
+codegen-units = 1
+lto = true
+
 [dependencies]
 actix-web = { version = "4.0.0-rc.3", features = ["compress-brotli", "compress-gzip"] }
 base64 = "0.13.0"
