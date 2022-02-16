@@ -1,0 +1,79 @@
+name: Rust continuous integration
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: "*"
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install latest stable
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        override: true
+        toolchain: stable
+    - name: Run tests
+      uses: actions-rs/cargo@v1
+      with:
+        command: test
+
+  check:
+    name: Check
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install latest stable
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        override: true
+        toolchain: stable
+    - name: Run tests
+      uses: actions-rs/cargo@v1
+      with:
+        command: check
+
+  fmt:
+    name: Rustfmt
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install latest stable
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        override: true
+        toolchain: stable
+        components: rustfmt
+    - name: Run tests
+      uses: actions-rs/cargo@v1
+      with:
+        command: fmt
+        args: --all -- --check
+
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install latest stable
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        override: true
+        toolchain: stable
+        components: clippy
+    - name: Run tests
+      uses: actions-rs/cargo@v1
+      with:
+        command: clippy
+        args: -- -D warnings
