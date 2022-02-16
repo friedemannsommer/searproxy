@@ -1,3 +1,4 @@
+use std::str::FromStr;
 use tracing::debug;
 
 mod assets;
@@ -15,7 +16,7 @@ fn main() {
     server::start_http_service();
 }
 
-fn get_config() -> model::Config<'static, 'static, 'static> {
+fn get_config() -> model::Config<'static, 'static> {
     use clap::Parser;
 
     let args: model::CliArgs = model::CliArgs::parse();
@@ -25,10 +26,20 @@ fn get_config() -> model::Config<'static, 'static, 'static> {
         hmac_secret: std::borrow::Cow::Owned(
             base64::decode(&args.hmac_secret).expect("HMAC secret couldn't be [base64] decoded"),
         ),
-        listen_address: std::borrow::Cow::Owned(args.listen_address),
+        listen: parse_socket_listener(&args.listen),
         log_level: args.log_level,
         request_timeout: args.request_timeout,
         proxy_address: args.proxy_address.map(std::borrow::Cow::Owned),
+    }
+}
+
+fn parse_socket_listener(input: &str) -> model::SocketListener {
+    if let Ok(address) = std::net::SocketAddr::from_str(input) {
+        model::SocketListener::Tcp(address)
+    } else if let Ok(path) = std::path::PathBuf::from_str(input) {
+        model::SocketListener::Unix(path)
+    } else {
+        panic!("Listener could not be parsed: '{}'", input)
     }
 }
 
@@ -45,7 +56,7 @@ fn init_logging(config: &model::Config) {
         .expect("tracing & logging subscriber registration failed");
 }
 
-fn set_shared_values(config: model::Config<'static, 'static, 'static>) {
+fn set_shared_values(config: model::Config<'static, 'static>) {
     if lib::HMAC
         .set(hmac_sha256::HMAC::new(config.hmac_secret.as_ref()))
         .is_err()

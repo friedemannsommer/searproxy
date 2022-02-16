@@ -1,11 +1,12 @@
 {% extends "base.html" %}
 {% block content %}
+{% if error_detail %}
+<h3>{{ error_detail.name }}</h3>
+<p>{{ error_detail.description }}</p>
+{% else %}
 <h3>While trying to process the request, an unexpected error occurred.</h3>
 <p>If it's implementation related, consider <a href="https://github.com/friedemannsommer/searproxy/issues"
                                                target="_blank" rel="noopener noreferrer">opening an
     issue</a>.</p>
+{% endif %}
 {% endblock content %}
-{% block footer %}
-The <a href="https://github.com/friedemannsommer/searproxy" target="_blank" rel="noopener noreferrer">Source
-    Code</a> is publicly available on GitHub.
-{% endblock footer %}

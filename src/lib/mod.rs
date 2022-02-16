@@ -10,3 +10,6 @@ pub use shared::{
     GLOBAL_CONFIG, HEADER_VALUE_CONTENT_HTML, HEADER_VALUE_CONTENT_TEXT, HEADER_VALUE_NO_CACHE,
     HMAC, MINIFY_CONFIG, REQUEST_CLIENT,
 };
+
+#[cfg(test)]
+pub use shared::test_setup_hmac;

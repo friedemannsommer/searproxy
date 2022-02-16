@@ -18,6 +18,7 @@ enum MatchState {
     L,
     OpeningBracket,
     Quote(u8),
+    ClosingBracket,
 }
 
 pub struct CssRewrite<'url> {
@@ -44,6 +45,13 @@ impl<'url> CssRewrite<'url> {
     }
 
     pub fn write(&mut self, chunk: &[u8]) -> Result<(), RewriteCssError> {
+        let _span = tracing::span!(
+            tracing::Level::TRACE,
+            "CssRewrite.write",
+            http.url = self.base_url.as_str()
+        )
+        .entered();
+
         self.buffer.extend_from_slice(chunk);
 
         let result = self.parse_buffer();
@@ -55,6 +63,13 @@ impl<'url> CssRewrite<'url> {
     }
 
     pub fn end(mut self) -> Result<Vec<u8>, RewriteCssError> {
+        let _span = tracing::span!(
+            tracing::Level::TRACE,
+            "CssRewrite.parse_buffer",
+            http.url = self.base_url.as_str()
+        )
+        .entered();
+
         self.parse_buffer()?;
         Ok(self.output)
     }
@@ -64,9 +79,15 @@ impl<'url> CssRewrite<'url> {
      * - url("https://www.example.com")
      * - url('https://www.example.com')
      * - url(https://www.example.com)
-     * todo: fix invalid URL indices for extraction in "large" stylesheets
      **/
     fn parse_buffer(&mut self) -> Result<(), RewriteCssError> {
+        let _span = tracing::span!(
+            tracing::Level::TRACE,
+            "CssRewrite.parse_buffer",
+            http.url = self.base_url.as_str()
+        )
+        .entered();
+
         if self.buffer.is_empty() {
             return Ok(());
         }
@@ -80,20 +101,20 @@ impl<'url> CssRewrite<'url> {
                 b'u' if self.match_state == MatchState::None => {
                     self.output.push(*byte);
                     self.match_start = offset + index;
-                    self.match_state = self.match_state.next();
+                    self.match_state.next();
                 }
                 b'r' if self.match_state == MatchState::U => {
                     self.output.push(*byte);
-                    self.match_state = self.match_state.next();
+                    self.match_state.next();
                 }
                 b'l' if self.match_state == MatchState::R => {
                     self.output.push(*byte);
-                    self.match_state = self.match_state.next();
+                    self.match_state.next();
                 }
                 b'(' if self.match_state == MatchState::L => {
                     self.output.push(*byte);
-                    self.url_start = offset + index;
-                    self.match_state = self.match_state.next();
+                    self.url_start = offset + index + 1;
+                    self.match_state.next();
                 }
                 b'"' if self.match_state == MatchState::OpeningBracket
                     || self.match_state == MatchState::Quote(b'"') =>
@@ -101,7 +122,7 @@ impl<'url> CssRewrite<'url> {
                     match self.match_state {
                         MatchState::OpeningBracket => {
                             self.output.push(*byte);
-                            self.url_start = offset + index;
+                            self.url_start = offset + index + 1;
                             self.match_state = MatchState::Quote(b'"')
                         }
                         _ => {
@@ -109,7 +130,7 @@ impl<'url> CssRewrite<'url> {
                                 self.rewrite_url(self.url_start, offset + index)?.as_bytes(),
                             );
                             self.output.push(*byte);
-                            self.match_state.reset()
+                            self.match_state.next()
                         }
                     }
                 }
@@ -120,7 +141,7 @@ impl<'url> CssRewrite<'url> {
                     match self.match_state {
                         MatchState::OpeningBracket => {
                             self.output.push(*byte);
-                            self.url_start = offset + index;
+                            self.url_start = offset + index + 1;
                             self.match_state = MatchState::Quote(b'\'')
                         }
                         _ => {
@@ -128,14 +149,17 @@ impl<'url> CssRewrite<'url> {
                                 self.rewrite_url(self.url_start, offset + index)?.as_bytes(),
                             );
                             self.output.push(*byte);
-                            self.match_state.reset()
+                            self.match_state.next();
                         }
                     }
                 }
                 b')' if self.match_state.inside_brackets() => {
-                    self.output.extend_from_slice(
-                        self.rewrite_url(self.url_start, offset + index)?.as_bytes(),
-                    );
+                    if self.match_state != MatchState::ClosingBracket {
+                        self.output.extend_from_slice(
+                            self.rewrite_url(self.url_start, offset + index)?.as_bytes(),
+                        );
+                    }
+
                     self.output.push(*byte);
                     self.match_state.reset()
                 }
@@ -157,7 +181,7 @@ impl<'url> CssRewrite<'url> {
         }
 
         if self.match_start != 0 {
-            self.buffer = self.buffer.split_off(self.match_start);
+            self.buffer.drain(0..self.match_start);
             self.last_index = self.last_index.saturating_sub(self.match_start);
             self.url_start = self.url_start.saturating_sub(self.match_start);
             self.match_start = 0
@@ -182,14 +206,15 @@ impl<'url> CssRewrite<'url> {
 }
 
 impl MatchState {
-    fn next(&self) -> Self {
-        match self {
+    fn next(&mut self) {
+        *self = match self {
             Self::None => Self::U,
             Self::U => Self::R,
             Self::R => Self::L,
             Self::L => Self::OpeningBracket,
+            Self::OpeningBracket | Self::Quote(_) => Self::ClosingBracket,
             _ => Self::None,
-        }
+        };
     }
 
     fn reset(&mut self) {
@@ -197,10 +222,124 @@ impl MatchState {
     }
 
     fn inside_brackets(&self) -> bool {
-        matches!(self, Self::OpeningBracket | Self::Quote(_))
+        matches!(
+            self,
+            Self::OpeningBracket | Self::Quote(_) | Self::ClosingBracket
+        )
     }
 
     fn whitespace_allowed(&self) -> bool {
-        matches!(self, Self::L | Self::OpeningBracket | Self::Quote(_))
+        matches!(
+            self,
+            Self::L | Self::OpeningBracket | Self::Quote(_) | Self::ClosingBracket
+        )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::lib::rewrite_css::CssRewrite;
+
+    #[test]
+    fn chunked_single_quote_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let base_url = url::Url::parse("https://www.example.com").unwrap();
+        let mut rewriter = CssRewrite::new(&base_url);
+
+        rewriter.write(b" ".repeat(2048).as_slice()).unwrap();
+        rewriter.write(b"ur").unwrap();
+        rewriter.write(b"l ( ").unwrap();
+        rewriter.write(b" ".repeat(2048).as_slice()).unwrap();
+        rewriter.write(b"'").unwrap();
+        rewriter.write(b"https://www.").unwrap();
+        rewriter.write(b"example.com").unwrap();
+        rewriter.write(b"/main.css'").unwrap();
+        rewriter.write(b"  ) ").unwrap();
+        rewriter.write(b" ".repeat(2048).as_slice()).unwrap();
+
+        assert!(std::str::from_utf8( rewriter.end().unwrap().as_slice()).unwrap().contains("url('./?mortyurl=https%3A%2F%2Fwww.example.com%2Fmain.css&mortyhash=7d40cd69599262cfe009ac148491a37e9ec47dcf2386c2807bc2255fff6d5fa3')"));
+    }
+
+    #[test]
+    fn simple_single_quote_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let base_url = url::Url::parse("https://www.example.com").unwrap();
+        let mut rewriter = CssRewrite::new(&base_url);
+
+        rewriter
+            .write(b"url('https://www.example.com/main.css')")
+            .unwrap();
+
+        assert_eq!(std::str::from_utf8( rewriter.end().unwrap().as_slice()).unwrap(), "url('./?mortyurl=https%3A%2F%2Fwww.example.com%2Fmain.css&mortyhash=7d40cd69599262cfe009ac148491a37e9ec47dcf2386c2807bc2255fff6d5fa3')");
+    }
+
+    #[test]
+    fn chunked_double_quote_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let base_url = url::Url::parse("https://www.example.com").unwrap();
+        let mut rewriter = CssRewrite::new(&base_url);
+
+        rewriter.write(b" ".repeat(2048).as_slice()).unwrap();
+        rewriter.write(b"ur").unwrap();
+        rewriter.write(b"l ( ").unwrap();
+        rewriter.write(b" ".repeat(2048).as_slice()).unwrap();
+        rewriter.write(b"\"").unwrap();
+        rewriter.write(b"https://www.").unwrap();
+        rewriter.write(b"example.com").unwrap();
+        rewriter.write(b"/main.css\"").unwrap();
+        rewriter.write(b"  ) ").unwrap();
+        rewriter.write(b" ".repeat(2048).as_slice()).unwrap();
+
+        assert!(std::str::from_utf8( rewriter.end().unwrap().as_slice()).unwrap().contains("url(\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Fmain.css&mortyhash=7d40cd69599262cfe009ac148491a37e9ec47dcf2386c2807bc2255fff6d5fa3\")"));
+    }
+
+    #[test]
+    fn simple_double_quote_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let base_url = url::Url::parse("https://www.example.com").unwrap();
+        let mut rewriter = CssRewrite::new(&base_url);
+
+        rewriter
+            .write(b"url(\"https://www.example.com/main.css\")")
+            .unwrap();
+
+        assert_eq!(std::str::from_utf8( rewriter.end().unwrap().as_slice()).unwrap(), "url(\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Fmain.css&mortyhash=7d40cd69599262cfe009ac148491a37e9ec47dcf2386c2807bc2255fff6d5fa3\")");
+    }
+
+    #[test]
+    fn chunked_no_quotes_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let base_url = url::Url::parse("https://www.example.com").unwrap();
+        let mut rewriter = CssRewrite::new(&base_url);
+
+        rewriter.write(b" ".repeat(2048).as_slice()).unwrap();
+        rewriter.write(b"ur").unwrap();
+        rewriter.write(b"l (").unwrap();
+        rewriter.write(b"https://www.").unwrap();
+        rewriter.write(b"example.com").unwrap();
+        rewriter.write(b"/main.css").unwrap();
+        rewriter.write(b") ").unwrap();
+        rewriter.write(b" ".repeat(2048).as_slice()).unwrap();
+
+        assert!(std::str::from_utf8( rewriter.end().unwrap().as_slice()).unwrap().contains("url(./?mortyurl=https%3A%2F%2Fwww.example.com%2Fmain.css&mortyhash=7d40cd69599262cfe009ac148491a37e9ec47dcf2386c2807bc2255fff6d5fa3)"));
+    }
+
+    #[test]
+    fn simple_no_quotes_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let base_url = url::Url::parse("https://www.example.com").unwrap();
+        let mut rewriter = CssRewrite::new(&base_url);
+
+        rewriter
+            .write(b"url(https://www.example.com/main.css)")
+            .unwrap();
+
+        assert_eq!(std::str::from_utf8( rewriter.end().unwrap().as_slice()).unwrap(), "url(./?mortyurl=https%3A%2F%2Fwww.example.com%2Fmain.css&mortyhash=7d40cd69599262cfe009ac148491a37e9ec47dcf2386c2807bc2255fff6d5fa3)");
     }
 }

@@ -17,7 +17,9 @@
     {% block content %}{% endblock content %}
 </section>
 <footer>
-    {% block footer %}{% endblock footer %}
+    {% block footer %}
+    {% include "footer.html" %}
+    {% endblock footer %}
 </footer>
 </body>
 </html>

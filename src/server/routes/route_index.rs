@@ -1,5 +1,7 @@
 use tracing::{error, span};
 
+use crate::server::lib::ErrorDetail;
+
 static DEFAULT_LANGUAGE: actix_web::http::header::HeaderValue =
     actix_web::http::header::HeaderValue::from_static("en");
 
@@ -50,8 +52,7 @@ pub async fn handle_request(
                     }
                     Err(err) => {
                         error!("{:?}", err);
-                        // todo: this should include at least some information about why it isn't working
-                        crate::server::lib::get_error_response()
+                        crate::server::lib::get_error_response(ErrorDetail::Client(err))
                     }
                 }
             } else {
@@ -64,7 +65,7 @@ pub async fn handle_request(
 fn render_index(response: actix_web::HttpResponse) -> actix_web::HttpResponse {
     let _render_span = span!(tracing::Level::TRACE, "render_index_html").entered();
 
-    match crate::templates::render_minified(crate::templates::Template::Index) {
+    match crate::templates::render_minified(crate::templates::Template::Index, None) {
         Ok(html) => {
             let mut response_body = response.set_body(actix_web::body::BoxBody::new(html));
 
@@ -77,7 +78,7 @@ fn render_index(response: actix_web::HttpResponse) -> actix_web::HttpResponse {
         }
         Err(err) => {
             error!("{:?}", err);
-            crate::server::lib::get_error_response()
+            crate::server::lib::get_error_response(ErrorDetail::Template(err))
         }
     }
 }

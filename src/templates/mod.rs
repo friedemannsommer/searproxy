@@ -7,26 +7,33 @@ pub enum Template {
     // InfoBox,
 }
 
-static BASE_HTML: &str = include_str!("base.html");
-static INDEX_HTML: &str = include_str!("index.html");
-static ERROR_HTML: &str = include_str!("error.html");
+macro_rules! include_template {
+    ($name:literal, $tera:expr) => {{
+        $tera
+            .add_raw_template($name, include_str!($name))
+            .expect(concat!("Template '", $name, "' couldn't be compiled"));
+    }};
+}
+
 static TEMPLATES: once_cell::sync::Lazy<Tera> = once_cell::sync::Lazy::new(|| {
     let mut tera = Tera::default();
 
-    tera.add_raw_template("base.html", BASE_HTML)
-        .expect("Template 'base.html' couldn't be compiled");
-    tera.add_raw_template("index.html", INDEX_HTML)
-        .expect("Template 'index.html' couldn't be compiled");
-    tera.add_raw_template("error.html", ERROR_HTML)
-        .expect("Template 'error.html' couldn't be compiled");
+    include_template!("base.html", tera);
+    include_template!("footer.html", tera);
+    include_template!("index.html", tera);
+    include_template!("error.html", tera);
 
     tera
 });
 
-pub fn render_minified(template: Template) -> Result<bytes::Bytes, tera::Error> {
+pub fn render_minified(
+    template: Template,
+    context_opt: Option<tera::Context>,
+) -> Result<bytes::Bytes, tera::Error> {
+    let context = context_opt.unwrap_or_default();
     let html = match template {
-        Template::Index => TEMPLATES.render("index.html", &tera::Context::default())?,
-        Template::Error => TEMPLATES.render("error.html", &tera::Context::default())?,
+        Template::Index => TEMPLATES.render("index.html", &context)?,
+        Template::Error => TEMPLATES.render("error.html", &context)?,
     };
 
     Ok(bytes::Bytes::from(minify_html::minify(

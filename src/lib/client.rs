@@ -79,7 +79,6 @@ pub async fn fetch_validate_url(
     Err(ClientError::InvalidHash)
 }
 
-#[async_recursion::async_recursion(?Send)]
 async fn fetch_transform_url(
     method: reqwest::Method,
     url: &str,

@@ -15,3 +15,10 @@ pub static HEADER_VALUE_CONTENT_TEXT: once_cell::sync::Lazy<actix_web::http::hea
     once_cell::sync::Lazy::new(|| {
         actix_web::http::header::HeaderValue::from_static(mime::TEXT_PLAIN_UTF_8.as_ref())
     });
+
+#[cfg(test)]
+pub fn test_setup_hmac() {
+    if HMAC.set(hmac_sha256::HMAC::new(b"example")).is_err() {
+        eprintln!("HMAC instance already initialized");
+    }
+}
