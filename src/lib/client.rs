@@ -34,8 +34,15 @@ pub enum ClientError {
     CssRewrite(#[from] RewriteCssError),
 }
 
+pub enum BodyType {
+    Complete(bytes::Bytes),
+    Stream(
+        std::pin::Pin<Box<dyn futures_util::Stream<Item = Result<bytes::Bytes, reqwest::Error>>>>,
+    ),
+}
+
 pub struct ClientResponse {
-    pub body: bytes::Bytes,
+    pub body: BodyType,
     pub content_disposition: Option<reqwest::header::HeaderValue>,
     pub content_type: mime::Mime,
 }
@@ -130,20 +137,20 @@ async fn transform_response(response: reqwest::Response) -> Result<ClientRespons
     Ok(
         if content_type == mime::TEXT_HTML || content_type == mime::TEXT_HTML_UTF_8 {
             ClientResponse {
-                body: transform_html(response).await?,
+                body: BodyType::Complete(transform_html(response).await?),
                 content_disposition: None,
                 content_type,
             }
         } else if content_type == mime::TEXT_CSS || content_type == mime::TEXT_CSS_UTF_8 {
             ClientResponse {
-                body: transform_css(response).await?,
+                body: BodyType::Complete(transform_css(response).await?),
                 content_disposition: None,
                 content_type,
             }
         } else {
             ClientResponse {
                 content_disposition: headers.get(reqwest::header::CONTENT_DISPOSITION).cloned(),
-                body: response.bytes().await?,
+                body: BodyType::Stream(Box::pin(response.bytes_stream())),
                 content_type,
             }
         },

@@ -38,9 +38,22 @@ pub async fn handle_request(
                 .await
                 {
                     Ok(client_res) => {
-                        let mut next_response =
-                            response.set_body(actix_web::body::BoxBody::new(client_res.body));
-                        let headers = next_response.headers_mut();
+                        response = match client_res.body {
+                            crate::lib::BodyType::Complete(bytes) => {
+                                response.set_body(actix_web::body::BoxBody::new(bytes))
+                            }
+                            crate::lib::BodyType::Stream(stream) => {
+                                response.set_body(actix_web::body::BoxBody::new(
+                                    actix_web::body::BodyStream::new(stream),
+                                ))
+                            }
+                        };
+
+                        let headers = response.headers_mut();
+
+                        if let Some(value) = client_res.content_disposition {
+                            headers.insert(actix_web::http::header::CONTENT_DISPOSITION, value);
+                        }
 
                         if let Ok(value) = actix_web::http::header::HeaderValue::from_str(
                             client_res.content_type.as_ref(),
@@ -48,7 +61,7 @@ pub async fn handle_request(
                             headers.insert(actix_web::http::header::CONTENT_TYPE, value);
                         }
 
-                        next_response
+                        response
                     }
                     Err(err) => {
                         error!("{:?}", err);
