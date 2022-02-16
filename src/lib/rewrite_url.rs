@@ -6,6 +6,8 @@ pub enum RewriteUrlError {
     UrlParse(#[from] url::ParseError),
     #[error("Serialization failed")]
     Serialize(#[from] serde_qs::Error),
+    #[error("data URI scheme rejected")]
+    DataUriRejected(String),
 }
 
 pub fn rewrite_url(base_url: &url::Url, url: &str) -> Result<String, RewriteUrlError> {
@@ -16,6 +18,15 @@ pub fn rewrite_url(base_url: &url::Url, url: &str) -> Result<String, RewriteUrlE
         http.url = url
     )
     .entered();
+
+    if url.starts_with("data:") {
+        return if url.starts_with("data:image/") {
+            Ok(String::from(url))
+        } else {
+            Err(RewriteUrlError::DataUriRejected(String::from(url)))
+        };
+    }
+
     let mut hmac = match crate::lib::HMAC.get() {
         Some(instance) => instance.clone(),
         None => return Err(RewriteUrlError::HmacInstance),
