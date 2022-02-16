@@ -1,9 +1,12 @@
 name: cargo-deny
+
 on:
   push:
     branches: "*"
     paths:
       - 'Cargo.toml'
+      - '.github/workflows/cargo-deny.yml'
+
 jobs:
   cargo-deny:
     runs-on: ubuntu-latest
