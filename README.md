@@ -7,7 +7,7 @@ A SearX[NG] compatible content sanitizer proxy
 ## Usage
 
 ```shell
-searproxy [OPTIONS] --hmac-secret <HMAC_SECRET> --listen-address <LISTEN_ADDRESS>
+searproxy [OPTIONS] --hmac-secret <HMAC_SECRET> --listen <LISTEN_ADDRESS>
 ```
 
 ## Options
