@@ -75,17 +75,12 @@ fn set_shared_values(config: model::Config<'static, 'static>) {
             reqwest::redirect::Policy::none()
         })
         .tcp_nodelay(true)
-        .tcp_keepalive(std::time::Duration::from_secs(
-            ((config.request_timeout as u64) * 2).max(60),
-        ))
+        .tcp_keepalive(None)
         .timeout(std::time::Duration::from_secs(
             config.request_timeout as u64,
         ))
         .connect_timeout(std::time::Duration::from_secs(
             config.request_timeout as u64,
-        ))
-        .pool_idle_timeout(std::time::Duration::from_secs(
-            ((config.request_timeout as u64) * 4).max(60),
         ))
         .user_agent(
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:91.0) Gecko/20100101 Firefox/91.0",
