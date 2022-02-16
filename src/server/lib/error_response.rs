@@ -1,5 +1,4 @@
 use std::borrow::Cow;
-use tracing::error;
 
 use crate::lib::ClientError;
 
@@ -20,6 +19,7 @@ pub struct ErrorMessage<'name, 'description> {
 pub fn get_error_response(error_detail: ErrorDetail) -> actix_web::HttpResponse {
     let mut response = actix_web::HttpResponse::new(match error_detail {
         ErrorDetail::Client(ClientError::InvalidHash) => actix_web::http::StatusCode::UNAUTHORIZED,
+        ErrorDetail::Client(ClientError::Hex(_)) => actix_web::http::StatusCode::BAD_REQUEST,
         _ => actix_web::http::StatusCode::INTERNAL_SERVER_ERROR,
     });
     let mut context = tera::Context::new();
@@ -33,7 +33,7 @@ pub fn get_error_response(error_detail: ErrorDetail) -> actix_web::HttpResponse 
         crate::lib::HEADER_VALUE_NO_CACHE.clone(),
     );
 
-    match crate::templates::render_minified(crate::templates::Template::Error, Some(context)) {
+    match crate::templates::render_template(crate::templates::Template::Error, Some(context)) {
         Ok(html) => {
             let mut response_body = response.set_body(actix_web::body::BoxBody::new(html));
 
@@ -45,7 +45,7 @@ pub fn get_error_response(error_detail: ErrorDetail) -> actix_web::HttpResponse 
             response_body
         }
         Err(err) => {
-            error!("{:?}", err);
+            log::error!("{:?}", err);
 
             response.headers_mut().insert(
                 actix_web::http::header::CONTENT_TYPE,
@@ -66,6 +66,14 @@ fn get_error_message(error_detail: ErrorDetail) -> Option<ErrorMessage<'static, 
         ErrorDetail::Client(ClientError::UnexpectedStatusCode(status_code)) => Some(ErrorMessage {
             name: Cow::Borrowed("Unexpected status code"),
             description: Cow::Owned(format!("Origin returned status code: '{}'", status_code)),
+        }),
+        ErrorDetail::Client(ClientError::MimeParse(_)) => Some(ErrorMessage {
+            name: Cow::Borrowed("Invalid media type"),
+            description: Cow::Borrowed("Origin returned invalid media type"),
+        }),
+        ErrorDetail::Client(ClientError::Hex(_)) => Some(ErrorMessage {
+            name: Cow::Borrowed("Invalid hash"),
+            description: Cow::Borrowed("The given hash must be valid hexadecimal."),
         }),
         _ => None,
     }

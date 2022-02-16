@@ -1,5 +1,3 @@
-use tracing::{error, info};
-
 pub mod lib;
 mod routes;
 
@@ -14,8 +12,8 @@ pub async fn start_http_service() {
             .wrap(actix_web::middleware::NormalizePath::new(
                 actix_web::middleware::TrailingSlash::Trim,
             ))
+            .wrap(actix_web::middleware::Logger::new("%a '%r' %s %T"))
             .wrap(get_default_headers_middleware())
-            .wrap(tracing_actix_web::TracingLogger::<lib::RootSpan>::new())
             .service(crate::static_asset_route!(
                 "/favicon.ico",
                 crate::assets::FAVICON_ICO_FILE,
@@ -36,6 +34,16 @@ pub async fn start_http_service() {
                 crate::assets::ROBOTS_FILE,
                 "text/plain"
             ))
+            .service(crate::static_asset_route!(
+                "/main.css",
+                crate::assets::MAIN_STYLESHEET,
+                "text/css"
+            ))
+            .service(crate::static_asset_route!(
+                "/header.css",
+                crate::assets::HEADER_STYLESHEET,
+                "text/css"
+            ))
             .route("/", actix_web::web::get().to(routes::handle_index))
     })
     .backlog(4096)
@@ -46,11 +54,11 @@ pub async fn start_http_service() {
         crate::model::SocketListener::Unix(path) => http_server.bind_uds(path),
     } {
         Ok(server_socket) => {
-            info!("Listening on {:?}", &config.listen);
+            log::info!("Listening on {:?}", &config.listen);
             server_socket
         }
         Err(err) => {
-            error!("Couldn't bind to '{:?}'", &config.listen);
+            log::error!("Couldn't bind to '{:?}'", &config.listen);
             panic!("{:?}", err);
         }
     }

@@ -8,7 +8,7 @@ mod shared;
 pub use client::{fetch_validate_url, BodyType, ClientError};
 pub use shared::{
     GLOBAL_CONFIG, HEADER_VALUE_CONTENT_HTML, HEADER_VALUE_CONTENT_TEXT, HEADER_VALUE_NO_CACHE,
-    HMAC, MINIFY_CONFIG, REQUEST_CLIENT,
+    HMAC, REQUEST_CLIENT,
 };
 
 #[cfg(test)]

@@ -5,8 +5,6 @@
 <p>{{ error_detail.description }}</p>
 {% else %}
 <h3>While trying to process the request, an unexpected error occurred.</h3>
-<p>If it's implementation related, consider <a href="https://github.com/friedemannsommer/searproxy/issues"
-                                               target="_blank" rel="noopener noreferrer">opening an
-    issue</a>.</p>
+<p>Consider <a href="{{ issues_url }}" target="_blank" rel="noopener noreferrer"> opening an issue</a>.</p>
 {% endif %}
 {% endblock content %}

@@ -11,14 +11,6 @@ pub enum RewriteUrlError {
 }
 
 pub fn rewrite_url(base_url: &url::Url, url: &str) -> Result<String, RewriteUrlError> {
-    let _span = tracing::span!(
-        tracing::Level::TRACE,
-        "rewrite_url",
-        http.base_url = base_url.as_str(),
-        http.url = url
-    )
-    .entered();
-
     if url.starts_with("data:") {
         return if url.starts_with("data:image/") {
             Ok(String::from(url))

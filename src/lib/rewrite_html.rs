@@ -84,6 +84,8 @@ impl<'url> HtmlRewrite<'url> {
                         lol_html::element!("*", Self::remove_disallowed_attributes),
                         lol_html::element!("*[href]", Self::transform_href(url)),
                         lol_html::element!("*[src]", Self::transform_src(url)),
+                        lol_html::element!("body", Self::append_proxy_header(url)),
+                        lol_html::element!("head", Self::append_proxy_styles),
                         lol_html::element!("img[srcset]", Self::transform_srcset(url)),
                     ],
                     ..lol_html::Settings::default()
@@ -99,22 +101,16 @@ impl<'url> HtmlRewrite<'url> {
         self.rewriter.write(data)
     }
 
-    pub fn end(self) -> Result<Rc<RefCell<Vec<u8>>>, lol_html::errors::RewritingError> {
+    pub fn end(self) -> Result<Vec<u8>, lol_html::errors::RewritingError> {
         self.rewriter.end()?;
 
-        Ok(self.output)
+        Ok(self.output.take())
     }
 
     fn transform_src(
         base_url: &'_ url::Url,
     ) -> impl Fn(&mut Element) -> Result<(), Box<dyn std::error::Error + Send + Sync>> + '_ {
         |element| {
-            let _span = tracing::span!(
-                tracing::Level::TRACE,
-                "transform_src",
-                http.url = base_url.as_str()
-            );
-
             element.set_attribute(
                 "src",
                 &rewrite_url(base_url, &element.get_attribute("src").unwrap())?,
@@ -128,21 +124,16 @@ impl<'url> HtmlRewrite<'url> {
         base_url: &'_ url::Url,
     ) -> impl Fn(&mut Element) -> Result<(), Box<dyn std::error::Error + Send + Sync>> + '_ {
         |element| {
-            let _span = tracing::span!(
-                tracing::Level::TRACE,
-                "transform_srcset",
-                http.url = base_url.as_str()
-            );
             let src_set_values = element.get_attribute("srcset").unwrap();
             let mut output = String::with_capacity(src_set_values.len());
             let mut offset = 0;
 
             for group in IMG_SRCSET_REGEX.captures_iter(&src_set_values) {
                 if let Some(matched_url) = group.name("url") {
-                    let proxied_url = rewrite_url(base_url, matched_url.as_str())?;
+                    let proxy_url = rewrite_url(base_url, matched_url.as_str())?;
 
                     output.push_str(&src_set_values[offset..matched_url.start()]);
-                    output.push_str(&proxied_url);
+                    output.push_str(&proxy_url);
                     offset = matched_url.end()
                 }
             }
@@ -158,12 +149,6 @@ impl<'url> HtmlRewrite<'url> {
         base_url: &'_ url::Url,
     ) -> impl Fn(&mut Element) -> Result<(), Box<dyn std::error::Error + Send + Sync>> + '_ {
         |element: &mut Element| {
-            let _span = tracing::span!(
-                tracing::Level::TRACE,
-                "transform_href",
-                http.url = base_url.as_str()
-            );
-
             element.set_attribute(
                 "href",
                 &rewrite_url(base_url, &element.get_attribute("href").unwrap())?,
@@ -173,10 +158,39 @@ impl<'url> HtmlRewrite<'url> {
         }
     }
 
+    fn append_proxy_header(
+        base_url: &'_ url::Url,
+    ) -> impl Fn(&mut Element) -> Result<(), Box<dyn std::error::Error + Send + Sync>> + '_ {
+        |element: &mut Element| {
+            let mut context = tera::Context::new();
+
+            context.insert("origin_url", base_url.as_str());
+
+            let header = crate::templates::render_template_string(
+                crate::templates::Template::Header,
+                Some(context),
+            )?;
+
+            element.prepend(header.as_str(), lol_html::html_content::ContentType::Html);
+
+            Ok(())
+        }
+    }
+
+    fn append_proxy_styles(
+        element: &mut Element,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        element.append(
+            "<link rel=\"stylesheet\" href=\"./header.css\">",
+            lol_html::html_content::ContentType::Html,
+        );
+
+        Ok(())
+    }
+
     fn remove_disallowed_attributes(
         element: &mut Element,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let _span = tracing::span!(tracing::Level::TRACE, "remove_disallowed_attributes");
         let mut remove_attributes = Vec::<String>::new();
 
         for attr in element.attributes() {
@@ -197,8 +211,6 @@ impl<'url> HtmlRewrite<'url> {
     fn remove_element(
         element: &mut Element,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let _span = tracing::span!(tracing::Level::TRACE, "remove_element");
-
         element.remove();
 
         Ok(())

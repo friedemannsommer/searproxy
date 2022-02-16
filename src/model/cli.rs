@@ -15,8 +15,8 @@ pub struct Args {
     pub listen: String,
     /// Log level to use. Keep in mind that this can include PII.
     /// Possible values include: "error", "warn", "info", "debug", "trace".
-    #[clap(short = 'v', long, env = "SEARPROXY_LOG_LEVEL", default_value_t = tracing::Level::WARN)]
-    pub log_level: tracing::Level,
+    #[clap(short = 'v', long, env = "SEARPROXY_LOG_LEVEL", default_value_t = log::LevelFilter::Warn)]
+    pub log_level: log::LevelFilter,
     /// Use a HTTP(s) / SOCKS5 proxy for outgoing HTTP(s) requests.
     #[clap(short, long, env = "HTTP_PROXY")]
     pub proxy_address: Option<String>,

@@ -1,5 +1,4 @@
 use std::str::FromStr;
-use tracing::debug;
 
 mod assets;
 mod lib;
@@ -11,7 +10,7 @@ fn main() {
     let config = get_config();
 
     init_logging(&config);
-    debug!("{:?}", &config);
+    log::debug!("{:?}", &config);
     set_shared_values(config);
     server::start_http_service();
 }
@@ -44,16 +43,28 @@ fn parse_socket_listener(input: &str) -> model::SocketListener {
 }
 
 fn init_logging(config: &model::Config) {
-    let subscriber = tracing_subscriber::FmtSubscriber::builder()
-        .with_max_level(config.log_level)
-        .with_target(true)
-        .with_thread_ids(false)
-        .with_thread_names(false)
-        .with_span_events(tracing_subscriber::fmt::format::FmtSpan::ACTIVE)
-        .finish();
+    if config.log_level != log::LevelFilter::Off {
+        let mut logger = fern::Dispatch::new().level(config.log_level);
 
-    tracing::subscriber::set_global_default(subscriber)
-        .expect("tracing & logging subscriber registration failed");
+        if config.log_level != log::LevelFilter::Error {
+            logger = logger.chain(
+                fern::Dispatch::new()
+                    .filter(|meta| meta.level() != log::LevelFilter::Error)
+                    .chain(std::io::stdout()),
+            )
+        }
+
+        logger
+            .chain(
+                fern::Dispatch::new()
+                    .level(log::LevelFilter::Error)
+                    .chain(std::io::stderr()),
+            )
+            .apply()
+            .expect("logging subscriber registration failed");
+    } else {
+        log::set_max_level(config.log_level);
+    }
 }
 
 fn set_shared_values(config: model::Config<'static, 'static>) {

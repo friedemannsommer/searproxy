@@ -45,13 +45,6 @@ impl<'url> CssRewrite<'url> {
     }
 
     pub fn write(&mut self, chunk: &[u8]) -> Result<(), RewriteCssError> {
-        let _span = tracing::span!(
-            tracing::Level::TRACE,
-            "CssRewrite.write",
-            http.url = self.base_url.as_str()
-        )
-        .entered();
-
         self.buffer.extend_from_slice(chunk);
 
         let result = self.parse_buffer();
@@ -63,13 +56,6 @@ impl<'url> CssRewrite<'url> {
     }
 
     pub fn end(mut self) -> Result<Vec<u8>, RewriteCssError> {
-        let _span = tracing::span!(
-            tracing::Level::TRACE,
-            "CssRewrite.parse_buffer",
-            http.url = self.base_url.as_str()
-        )
-        .entered();
-
         self.parse_buffer()?;
         Ok(self.output)
     }
@@ -81,13 +67,6 @@ impl<'url> CssRewrite<'url> {
      * - url(https://www.example.com)
      **/
     fn parse_buffer(&mut self) -> Result<(), RewriteCssError> {
-        let _span = tracing::span!(
-            tracing::Level::TRACE,
-            "CssRewrite.parse_buffer",
-            http.url = self.base_url.as_str()
-        )
-        .entered();
-
         if self.buffer.is_empty() {
             return Ok(());
         }
