@@ -75,17 +75,16 @@ impl<'url> HtmlRewrite<'url> {
             rewriter: lol_html::HtmlRewriter::new(
                 lol_html::Settings {
                     element_content_handlers: vec![
-                        lol_html::element!("*", Self::remove_disallowed_attributes),
-                        lol_html::element!("*[href]", Self::transform_href(url)),
                         lol_html::element!("applet", Self::remove_element),
                         lol_html::element!("canvas", Self::remove_element),
                         lol_html::element!("embed", Self::remove_element),
-                        lol_html::element!("iframe[src]", Self::transform_src(url)),
-                        lol_html::element!("img[src]", Self::transform_src(url)),
-                        lol_html::element!("img[srcset]", Self::transform_srcset(url)),
                         lol_html::element!("math", Self::remove_element),
                         lol_html::element!("script", Self::remove_element),
                         lol_html::element!("svg", Self::remove_element),
+                        lol_html::element!("*", Self::remove_disallowed_attributes),
+                        lol_html::element!("*[href]", Self::transform_href(url)),
+                        lol_html::element!("*[src]", Self::transform_src(url)),
+                        lol_html::element!("img[srcset]", Self::transform_srcset(url)),
                     ],
                     ..lol_html::Settings::default()
                 },
@@ -144,7 +143,7 @@ impl<'url> HtmlRewrite<'url> {
 
                     output.push_str(&src_set_values[offset..matched_url.start()]);
                     output.push_str(&proxied_url);
-                    offset = matched_url.end();
+                    offset = matched_url.end()
                 }
             }
 
