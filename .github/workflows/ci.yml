@@ -159,8 +159,9 @@ jobs:
           path: artifact-binaries
       - name: Rename files
         run: |
+          mkdir release-binaries
           for target in "aarch64-unknown-linux-musl x86_64-unknown-linux-musl"; do
-            mv "${{steps.download.outputs.download-path}}/SearProxy_$target/searproxy" ./release-binaries/searproxy_$target
+            mv "${{steps.download.outputs.download-path}}/SearProxy_$target/searproxy" "./release-binaries/searproxy_$target"
           done
       - name: Create release
         uses: "softprops/action-gh-release@v1"
@@ -169,4 +170,4 @@ jobs:
           draft: true
           tag_name: "${{ github.ref_name }}-${{ github.sha }}"
           files: |
-            ${{steps.download.outputs.download-path}}/*/searproxy
+            release-binaries/*
