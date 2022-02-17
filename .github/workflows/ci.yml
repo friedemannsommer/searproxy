@@ -145,6 +145,7 @@ jobs:
         with:
           name: "SearProxy_${{ matrix.target }}"
           path: "target/${{ matrix.target }}/release/searproxy"
+          retention-days: 1
 
   release:
     name: "Create release"
