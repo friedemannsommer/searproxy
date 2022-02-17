@@ -80,7 +80,8 @@ confidence-threshold = 0.8
 # aren't accepted for every possible crate as with the normal allow list
 exceptions = [
     { name = "encoding_rs", allow = ["BSD-3-Clause"] },
-    { name = "searproxy", allow = ["AGPL-3.0"] }
+    { name = "ring", allow = ["LicenseRef-ring"] },
+    { name = "searproxy", allow = ["AGPL-3.0"] },
 ]
 
 [[licenses.clarify]]
@@ -89,6 +90,14 @@ version = "*"
 expression = "(Apache-2.0 OR MIT) AND BSD-3-Clause"
 license-files = [
     { path = "COPYRIGHT", hash = 0x39f8ad31 }
+]
+
+[[licenses.clarify]]
+name = "ring"
+version = "*"
+expression = "LicenseRef-ring"
+license-files = [
+    { path = "LICENSE", hash = 0xbd0eed23 },
 ]
 
 [licenses.private]
