@@ -112,7 +112,7 @@ jobs:
   build-release:
     name: "Build release"
     runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request'
+    if: github.event_name != 'pull_request' && startsWith(github.ref, 'refs/tags/')
     needs:
       - test
       - check
@@ -172,6 +172,5 @@ jobs:
         with:
           generate_release_notes: true
           draft: true
-          tag_name: "${{ github.ref_name }}-${{ github.sha }}"
           files: |
             release-binaries/*
