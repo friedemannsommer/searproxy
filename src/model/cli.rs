@@ -1,6 +1,6 @@
 use clap::Parser;
 
-/// A SearX[NG] compatible content sanitizer proxy
+/// A SearX[NG] compatible web content sanitizer proxy
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
 pub struct Args {
