@@ -17,6 +17,6 @@ pub static HEADER_VALUE_CONTENT_TEXT: once_cell::sync::Lazy<actix_web::http::hea
 #[cfg(test)]
 pub fn test_setup_hmac() {
     if HMAC.set(hmac_sha256::HMAC::new(b"example")).is_err() {
-        eprintln!("HMAC instance already initialized");
+        // silently ignore this, since it only `Err`s on successive calls
     }
 }

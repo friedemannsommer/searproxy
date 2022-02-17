@@ -220,6 +220,84 @@ mod tests {
     use crate::lib::rewrite_css::CssRewrite;
 
     #[test]
+    fn no_quotes_relative_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let base_url = url::Url::parse("https://www.example.com").unwrap();
+        let mut rewriter = CssRewrite::new(&base_url);
+
+        rewriter.write(b"url(main.css)").unwrap();
+
+        assert_eq!(std::str::from_utf8( rewriter.end().unwrap().as_slice()).unwrap(),"url(./?mortyurl=https%3A%2F%2Fwww.example.com%2Fmain.css&mortyhash=7d40cd69599262cfe009ac148491a37e9ec47dcf2386c2807bc2255fff6d5fa3)");
+    }
+
+    #[test]
+    fn single_quotes_relative_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let base_url = url::Url::parse("https://www.example.com").unwrap();
+        let mut rewriter = CssRewrite::new(&base_url);
+
+        rewriter.write(b"url('main.css')").unwrap();
+
+        assert_eq!(std::str::from_utf8( rewriter.end().unwrap().as_slice()).unwrap(),"url('./?mortyurl=https%3A%2F%2Fwww.example.com%2Fmain.css&mortyhash=7d40cd69599262cfe009ac148491a37e9ec47dcf2386c2807bc2255fff6d5fa3')");
+    }
+
+    #[test]
+    fn double_quotes_relative_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let base_url = url::Url::parse("https://www.example.com").unwrap();
+        let mut rewriter = CssRewrite::new(&base_url);
+
+        rewriter.write(b"url(\"main.css\")").unwrap();
+
+        assert_eq!(std::str::from_utf8( rewriter.end().unwrap().as_slice()).unwrap(),"url(\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Fmain.css&mortyhash=7d40cd69599262cfe009ac148491a37e9ec47dcf2386c2807bc2255fff6d5fa3\")");
+    }
+
+    #[test]
+    fn no_quotes_relative_n_5() {
+        crate::lib::test_setup_hmac();
+
+        let base_url = url::Url::parse("https://www.example.com").unwrap();
+        let mut rewriter = CssRewrite::new(&base_url);
+
+        rewriter
+            .write("url(main.css)".repeat(5).as_bytes())
+            .unwrap();
+
+        assert_eq!(std::str::from_utf8( rewriter.end().unwrap().as_slice()).unwrap(),"url(./?mortyurl=https%3A%2F%2Fwww.example.com%2Fmain.css&mortyhash=7d40cd69599262cfe009ac148491a37e9ec47dcf2386c2807bc2255fff6d5fa3)".repeat(5));
+    }
+
+    #[test]
+    fn single_quotes_relative_n_5() {
+        crate::lib::test_setup_hmac();
+
+        let base_url = url::Url::parse("https://www.example.com").unwrap();
+        let mut rewriter = CssRewrite::new(&base_url);
+
+        rewriter
+            .write("url('main.css')".repeat(5).as_bytes())
+            .unwrap();
+
+        assert_eq!(std::str::from_utf8( rewriter.end().unwrap().as_slice()).unwrap(),"url('./?mortyurl=https%3A%2F%2Fwww.example.com%2Fmain.css&mortyhash=7d40cd69599262cfe009ac148491a37e9ec47dcf2386c2807bc2255fff6d5fa3')".repeat(5));
+    }
+
+    #[test]
+    fn double_quotes_relative_n_5() {
+        crate::lib::test_setup_hmac();
+
+        let base_url = url::Url::parse("https://www.example.com").unwrap();
+        let mut rewriter = CssRewrite::new(&base_url);
+
+        rewriter
+            .write("url(\"main.css\")".repeat(5).as_bytes())
+            .unwrap();
+
+        assert_eq!(std::str::from_utf8( rewriter.end().unwrap().as_slice()).unwrap(),"url(\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Fmain.css&mortyhash=7d40cd69599262cfe009ac148491a37e9ec47dcf2386c2807bc2255fff6d5fa3\")".repeat(5));
+    }
+
+    #[test]
     fn chunked_single_quote_n_1() {
         crate::lib::test_setup_hmac();
 

@@ -216,3 +216,214 @@ impl<'url> HtmlRewrite<'url> {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::lib::rewrite_html::HtmlRewrite;
+
+    #[test]
+    fn rewrite_a_href_relative_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let base_url = url::Url::parse("https://www.example.com/index.html").unwrap();
+        let mut rewriter = HtmlRewrite::new(&base_url);
+
+        rewriter.write(b"<a href='/'>main</a>").unwrap();
+
+        assert_eq!(std::str::from_utf8( rewriter.end().unwrap().as_slice()).unwrap(), "<a href=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2F&mortyhash=85870232cac1676c4477f7cae4da7173ccee4002f32e89c16038547aa20175c0\">main</a>");
+    }
+
+    #[test]
+    fn rewrite_img_src_relative_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let base_url = url::Url::parse("https://www.example.com/").unwrap();
+        let mut rewriter = HtmlRewrite::new(&base_url);
+
+        rewriter.write(b"<img src='/logo.png'>").unwrap();
+
+        assert_eq!(std::str::from_utf8( rewriter.end().unwrap().as_slice()).unwrap(), "<img src=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Flogo.png&mortyhash=2aa2717d139a63b3f3fc43fa862c8a73fc7814f1140b5279fc2758bc9d8cc1f9\">");
+    }
+
+    #[test]
+    fn rewrite_iframe_src_relative_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let base_url = url::Url::parse("https://www.example.com/").unwrap();
+        let mut rewriter = HtmlRewrite::new(&base_url);
+
+        rewriter
+            .write(b"<iframe src='/test.html'></iframe>")
+            .unwrap();
+
+        assert_eq!(std::str::from_utf8( rewriter.end().unwrap().as_slice()).unwrap(), "<iframe src=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Ftest.html&mortyhash=48b7184730b6c78c9b4231f70560f92bdc09188ab27871d9489a372b3b47a9e1\"></iframe>");
+    }
+
+    #[test]
+    fn rewrite_img_attributes_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let base_url = url::Url::parse("https://www.example.com/").unwrap();
+        let mut rewriter = HtmlRewrite::new(&base_url);
+
+        rewriter.write(b"<img class='image' onmouseover='javascript:console.log(this)' onerror='javascript:alert(\"failed\")'>").unwrap();
+
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().as_slice()).unwrap(),
+            "<img class='image'>"
+        );
+    }
+
+    #[test]
+    fn rewrite_img_srcset_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let base_url = url::Url::parse("https://www.example.com/").unwrap();
+        let mut rewriter = HtmlRewrite::new(&base_url);
+
+        rewriter.write(b"<img srcset='header640.png 640w, header960.png 960w, header1024.png 1024w, header.png'>").unwrap();
+
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().as_slice()).unwrap(),
+            "<img srcset=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Fheader640.png&mortyhash=bf2aa9174435adfc3616a7bbb7f34e42cc7935e34feb23e0f6001b3acf2ceee0 640w, ./?mortyurl=https%3A%2F%2Fwww.example.com%2Fheader960.png&mortyhash=197fbfa4294a326f377651d2297f8ed5bf45018210e8615c7ee5dd7fad7037ec 960w, ./?mortyurl=https%3A%2F%2Fwww.example.com%2Fheader1024.png&mortyhash=d056d2f2316e7d9a1be4f34d7b430af80a610a87dc7616ae6d8d3d27cd84aef1 1024w, ./?mortyurl=https%3A%2F%2Fwww.example.com%2Fheader.png&mortyhash=890ee860e875afc9c56d972f1f44d64b55d93aeaf73a7f24e1cd43fc5806a414\">"
+        );
+    }
+
+    #[test]
+    fn rewrite_iframe_attributes_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let base_url = url::Url::parse("https://www.example.com/").unwrap();
+        let mut rewriter = HtmlRewrite::new(&base_url);
+
+        rewriter
+            .write(b"<iframe height='1' width='1' onclick='javascript:alert(1)'></iframe>")
+            .unwrap();
+
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().as_slice()).unwrap(),
+            "<iframe height='1' width='1'></iframe>"
+        );
+    }
+
+    #[test]
+    fn remove_applet_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let base_url = url::Url::parse("https://www.example.com/index.html").unwrap();
+        let mut rewriter = HtmlRewrite::new(&base_url);
+
+        rewriter.write(b"<applet />").unwrap();
+
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().as_slice()).unwrap(),
+            ""
+        );
+    }
+
+    #[test]
+    fn remove_canvas_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let base_url = url::Url::parse("https://www.example.com/index.html").unwrap();
+        let mut rewriter = HtmlRewrite::new(&base_url);
+
+        rewriter.write(b"<canvas />").unwrap();
+
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().as_slice()).unwrap(),
+            ""
+        );
+    }
+
+    #[test]
+    fn remove_embed_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let base_url = url::Url::parse("https://www.example.com/index.html").unwrap();
+        let mut rewriter = HtmlRewrite::new(&base_url);
+
+        rewriter.write(b"<embed />").unwrap();
+
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().as_slice()).unwrap(),
+            ""
+        );
+    }
+
+    #[test]
+    fn remove_math_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let base_url = url::Url::parse("https://www.example.com/index.html").unwrap();
+        let mut rewriter = HtmlRewrite::new(&base_url);
+
+        rewriter.write(b"<math />").unwrap();
+
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().as_slice()).unwrap(),
+            ""
+        );
+    }
+
+    #[test]
+    fn remove_script_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let base_url = url::Url::parse("https://www.example.com/index.html").unwrap();
+        let mut rewriter = HtmlRewrite::new(&base_url);
+
+        rewriter.write(b"<script />").unwrap();
+
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().as_slice()).unwrap(),
+            ""
+        );
+    }
+
+    #[test]
+    fn remove_svg_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let base_url = url::Url::parse("https://www.example.com/index.html").unwrap();
+        let mut rewriter = HtmlRewrite::new(&base_url);
+
+        rewriter.write(b"<svg />").unwrap();
+
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().as_slice()).unwrap(),
+            ""
+        );
+    }
+
+    #[test]
+    fn rewrite_body_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let base_url = url::Url::parse("https://www.example.com/index.html").unwrap();
+        let mut rewriter = HtmlRewrite::new(&base_url);
+
+        rewriter.write(b"<body><h1>Test</h1></body>").unwrap();
+
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().as_slice()).unwrap(),
+            // this is pretty finicky... (and will break if the "header.html" formatting changes)
+            "<body><div class=\"__sp_header\">\n    <h1>SearProxy</h1>\n    <p>This is a proxified and sanitized version, visit\n        <a href=\"https:&#x2F;&#x2F;www.example.com&#x2F;index.html\" target=\"_self\" rel=\"noreferrer noopener\">original page</a>.\n    </p>\n</div><h1>Test</h1></body>"
+        );
+    }
+
+    #[test]
+    fn rewrite_head_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let base_url = url::Url::parse("https://www.example.com/index.html").unwrap();
+        let mut rewriter = HtmlRewrite::new(&base_url);
+
+        rewriter.write(b"<head><title>Test</title></head>").unwrap();
+
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().as_slice()).unwrap(),
+            "<head><title>Test</title><link rel=\"stylesheet\" href=\"./header.css\"></head>"
+        );
+    }
+}
