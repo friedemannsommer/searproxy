@@ -1,6 +1,6 @@
 # SearProxy
 
-A SearX[NG] compatible content sanitizer proxy
+A SearX[NG] compatible web content sanitizer proxy
 
 > This implementation is heavily inspired by [Morty](https://github.com/asciimoo/morty).
 
