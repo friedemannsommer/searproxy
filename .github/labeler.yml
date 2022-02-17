@@ -1,0 +1,29 @@
+asset:
+  - any: [ 'src/**/*.png', 'src/**/*.ico', 'src/**/*.txt', 'src/**/*.jpg' ]
+
+rust:
+  - any: [ 'src/**/*.rs' ]
+
+html:
+  - any: [ 'src/**/*.html' ]
+
+css:
+  - any: [ 'src/**/*.css' ]
+
+cargo:
+  - any: [ '**/Cargo.toml', '**/Cargo.lock' ]
+
+cargo-deny:
+  - any: [ '**/deny.toml' ]
+
+license:
+  - any: [ 'LICENSE' ]
+
+markdown:
+  - any: [ '**/*.md' ]
+
+git:
+  - any: [ '**/*.gitignore', '**/*.gitattributes' ]
+
+github:
+  - any: [ '.github/**/*' ]

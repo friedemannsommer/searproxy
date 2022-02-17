@@ -1,0 +1,26 @@
+name: "Pull Request Labeler"
+
+on: [ pull_request_target ]
+
+permissions:
+  actions: none
+  checks: none
+  contents: read
+  deployments: none
+  id-token: none
+  issues: none
+  packages: none
+  pages: none
+  pull-requests: write
+  repository-projects: none
+  security-events: none
+  statuses: none
+
+jobs:
+  labeler:
+    name: Labeler
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/labeler@v3
+        with:
+          repo-token: "${{ secrets.GITHUB_TOKEN }}"
