@@ -112,7 +112,7 @@ jobs:
   build-release:
     name: "Build release"
     runs-on: ubuntu-latest
-    if: github.event_name != "pull_request"
+    if: github.event_name != 'pull_request'
     needs:
       - test
       - check
