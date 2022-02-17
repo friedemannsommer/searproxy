@@ -2,17 +2,32 @@ name: Rust continuous integration
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
     paths:
-      - 'src/**'
-      - 'Cargo.toml'
-      - '.github/workflows/ci.yml'
+      - "src/**"
+      - "Cargo.toml"
+      - ".github/workflows/ci.yml"
   pull_request:
     branches: "*"
     paths:
-      - 'src/**'
-      - 'Cargo.toml'
-      - '.github/workflows/ci.yml'
+      - "src/**"
+      - "Cargo.toml"
+      - ".github/workflows/ci.yml"
+
+permissions:
+  actions: none
+  checks: none
+  contents: read
+  deployments: none
+  id-token: none
+  issues: none
+  packages: none
+  pages: none
+  pull-requests: none
+  repository-projects: none
+  security-events: none
+  statuses: none
 
 env:
   CARGO_TERM_COLOR: always
@@ -93,3 +108,65 @@ jobs:
         with:
           command: clippy
           args: -- -D warnings
+
+  build-release:
+    name: "Build release"
+    runs-on: ubuntu-latest
+    if: github.event_name != "pull_request"
+    needs:
+      - test
+      - check
+      - fmt
+      - clippy
+    strategy:
+      matrix:
+        target:
+          - "aarch64-unknown-linux-musl"
+          - "x86_64-unknown-linux-musl"
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install latest stable
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          override: true
+          toolchain: stable
+          target: ${{ matrix.target }}
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v1
+      - uses: actions-rs/cargo@v1
+        with:
+          use-cross: true
+          command: build
+          args: --target ${{ matrix.target }} --release
+      - uses: actions/upload-artifact@v2
+        with:
+          name: "SearProxy_${{ matrix.target }}"
+          path: "target/${{ matrix.target }}/release/searproxy"
+
+  release:
+    name: "Create release"
+    runs-on: ubuntu-latest
+    needs:
+      - "build-release"
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/download-artifact@v2
+        id: download
+        with:
+          path: artifact-binaries
+      - name: Rename files
+        run: |
+          for target in "aarch64-unknown-linux-musl x86_64-unknown-linux-musl"; do
+            mv "${{steps.download.outputs.download-path}}/SearProxy_$target/searproxy" ./release-binaries/searproxy_$target
+          done
+      - name: Create release
+        uses: "softprops/action-gh-release@v1"
+        with:
+          generate_release_notes: true
+          draft: true
+          tag_name: "${{ github.ref_name }}-${{ github.sha }}"
+          files: |
+            ${{steps.download.outputs.download-path}}/*/searproxy
