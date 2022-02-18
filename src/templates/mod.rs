@@ -9,10 +9,6 @@ pub enum Template<'error_name, 'error_description, 'url> {
     Index,
 }
 
-pub fn render_template(template: Template) -> bytes::Bytes {
-    bytes::Bytes::from(render_template_string(template))
-}
-
 pub fn render_template_string(template: Template) -> String {
     match template {
         Template::Error(error_detail) => error::error(&error_detail).to_string(),

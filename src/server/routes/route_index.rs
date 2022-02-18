@@ -40,7 +40,7 @@ pub async fn handle_request(
 
 fn render_index(response: actix_web::HttpResponse) -> actix_web::HttpResponse {
     let mut response_body = response.set_body(actix_web::body::BoxBody::new(
-        crate::templates::render_template(crate::templates::Template::Index),
+        crate::templates::render_template_string(crate::templates::Template::Index),
     ));
 
     response_body.headers_mut().insert(

@@ -15,7 +15,7 @@ pub fn get_error_response(error_detail: ClientError) -> actix_web::HttpResponse 
             ClientError::Hex(_) => actix_web::http::StatusCode::BAD_REQUEST,
             _ => actix_web::http::StatusCode::INTERNAL_SERVER_ERROR,
         },
-        actix_web::body::BoxBody::new(crate::templates::render_template(
+        actix_web::body::BoxBody::new(crate::templates::render_template_string(
             crate::templates::Template::Error(get_error_message(error_detail)),
         )),
     );
