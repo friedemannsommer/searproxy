@@ -26,11 +26,9 @@ markup::define! {
                     @content
                 }
                 footer {
-                    "The "
                     a["href" = "https://github.com/friedemannsommer/searproxy", "target" = "_blank", "rel" = "noopener noreferrer"] {
-                        "source code"
+                        "Source code"
                     }
-                    " is publicly available."
                 }
             }
         }
