@@ -66,6 +66,6 @@ jobs:
             [1]: https://github.com/peter-evans/create-pull-request
           branch: auto-generated-third-party-license-overview
           branch-suffix: short-commit-hash
-          add-paths: licensing/licenses.html
+          add-paths: public/licenses.html
           labels: license
           draft: false
