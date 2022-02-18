@@ -48,7 +48,7 @@ jobs:
           args: --locked cargo-about
       - name: Create "public" directory (if necessary)
         run: |
-          if [[ -d public ]]; then
+          if [[ ! -d public ]]; then
             mkdir public
           fi
       - name: Generate third party license overview
