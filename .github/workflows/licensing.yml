@@ -46,6 +46,11 @@ jobs:
         with:
           command: install
           args: --locked cargo-about
+      - name: Create "public" directory (if necessary)
+        run: |
+          if [[ -d public ]]; then
+            mkdir public
+          fi
       - name: Generate third party license overview
         run: cargo-about generate -o public/licenses.html licensing/about.hbs -c licensing/about.toml
       - name: Create Pull Request
