@@ -1,5 +1,3 @@
-use crate::server::lib::ErrorDetail;
-
 static DEFAULT_LANGUAGE: actix_web::http::header::HeaderValue =
     actix_web::http::header::HeaderValue::from_static("en");
 
@@ -41,22 +39,16 @@ pub async fn handle_request(
 }
 
 fn render_index(response: actix_web::HttpResponse) -> actix_web::HttpResponse {
-    match crate::templates::render_template(crate::templates::Template::Index, None) {
-        Ok(html) => {
-            let mut response_body = response.set_body(actix_web::body::BoxBody::new(html));
+    let mut response_body = response.set_body(actix_web::body::BoxBody::new(
+        crate::templates::render_template(crate::templates::Template::Index),
+    ));
 
-            response_body.headers_mut().insert(
-                actix_web::http::header::CONTENT_TYPE,
-                actix_web::http::header::HeaderValue::from_static("text/html"),
-            );
+    response_body.headers_mut().insert(
+        actix_web::http::header::CONTENT_TYPE,
+        actix_web::http::header::HeaderValue::from_static("text/html"),
+    );
 
-            response_body
-        }
-        Err(err) => {
-            log::error!("{:?}", err);
-            crate::server::lib::get_error_response(ErrorDetail::Template(err))
-        }
-    }
+    response_body
 }
 
 async fn fetch_url(
@@ -90,7 +82,7 @@ async fn fetch_url(
         }
         Err(err) => {
             log::error!("{:?}", err);
-            crate::server::lib::get_error_response(ErrorDetail::Client(err))
+            crate::server::lib::get_error_response(err)
         }
     }
 }
