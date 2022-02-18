@@ -31,3 +31,8 @@ searproxy [OPTIONS] --hmac-secret <HMAC_SECRET> --listen <LISTEN_ADDRESS>
 * `SEARPROXY_LOG_LEVEL` - Log level to use (default: WARN)
 * `HTTP_PROXY` - HTTP(s) / SOCKS5 proxy for outgoing HTTP(s) requests
 * `SEARPROXY_REQUEST_TIMEOUT` - Timeout in seconds to wait for a request to complete (default: 5s)
+
+## Third party licenses
+
+A list of licenses for the projects used can be found
+here: [friedemannsommer.github.io/searproxy/licenses.html](https://friedemannsommer.github.io/searproxy/licenses.html).
