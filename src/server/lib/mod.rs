@@ -1,3 +1,3 @@
-pub use error_response::{ErrorMessage, get_error_response};
+pub use error_response::{get_error_response, ErrorMessage};
 
 mod error_response;
