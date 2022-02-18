@@ -9,10 +9,6 @@ pub static HEADER_VALUE_CONTENT_HTML: once_cell::sync::Lazy<actix_web::http::hea
     once_cell::sync::Lazy::new(|| {
         actix_web::http::header::HeaderValue::from_static(mime::TEXT_HTML_UTF_8.as_ref())
     });
-pub static HEADER_VALUE_CONTENT_TEXT: once_cell::sync::Lazy<actix_web::http::header::HeaderValue> =
-    once_cell::sync::Lazy::new(|| {
-        actix_web::http::header::HeaderValue::from_static(mime::TEXT_PLAIN_UTF_8.as_ref())
-    });
 
 #[cfg(test)]
 pub fn test_setup_hmac() {

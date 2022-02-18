@@ -162,16 +162,13 @@ impl<'url> HtmlRewrite<'url> {
         base_url: &'_ url::Url,
     ) -> impl Fn(&mut Element) -> Result<(), Box<dyn std::error::Error + Send + Sync>> + '_ {
         |element: &mut Element| {
-            let mut context = tera::Context::new();
-
-            context.insert("origin_url", base_url.as_str());
-
-            let header = crate::templates::render_template_string(
-                crate::templates::Template::Header,
-                Some(context),
-            )?;
-
-            element.prepend(header.as_str(), lol_html::html_content::ContentType::Html);
+            element.prepend(
+                crate::templates::render_template_string(crate::templates::Template::Header(
+                    base_url.as_str(),
+                ))
+                .as_str(),
+                lol_html::html_content::ContentType::Html,
+            );
 
             Ok(())
         }
@@ -408,7 +405,7 @@ mod tests {
         assert_eq!(
             std::str::from_utf8(rewriter.end().unwrap().as_slice()).unwrap(),
             // this is pretty finicky... (and will break if the "header.html" formatting changes)
-            "<body><div class=\"__sp_header\">\n    <h1>SearProxy</h1>\n    <p>This is a proxified and sanitized version, visit\n        <a href=\"https:&#x2F;&#x2F;www.example.com&#x2F;index.html\" target=\"_self\" rel=\"noreferrer noopener\">original page</a>.\n    </p>\n</div><h1>Test</h1></body>"
+            "<body><div class=\"__sp_header\"><h1>SearProxy</h1><p>This is a proxified and sanitized version, visit <a href=\"https://www.example.com/index.html\" target=\"_self\" rel=\"noreferrer noopener\">original page</a>.</p></div><h1>Test</h1></body>"
         );
     }
 
