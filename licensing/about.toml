@@ -1,0 +1,24 @@
+accepted = ["Apache-2.0", "ISC", "MIT", "MPL-2.0"]
+private = { ignore = true }
+workarounds = [
+    "ring",
+    "rustls",
+]
+
+[ring]
+accepted = ["OpenSSL"]
+
+[alloc-no-stdlib]
+accepted = ["BSD-3-Clause"]
+
+[encoding_rs]
+accepted = ["BSD-3-Clause"]
+
+[instant]
+accepted = ["BSD-3-Clause"]
+
+[lol_html]
+accepted = ["BSD-3-Clause"]
+
+[alloc-stdlib]
+accepted = ["BSD-3-Clause"]
