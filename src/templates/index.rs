@@ -5,7 +5,7 @@ pub fn index(
     Base {
         header: markup::new! {
             h2 {
-                "This is a SearX & SearXNG compatible web proxy which excludes potential malicious HTML tags. It also rewrites links
+                "This is a SearX & SearXNG compatible web proxy which excludes potentially malicious HTML tags. It also rewrites links
         to external resources to prevent leaks."
             }
         },
