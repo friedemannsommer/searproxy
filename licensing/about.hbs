@@ -2,7 +2,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>SearProxy third-party licenses</title>
+    <title>SearProxy open source licenses</title>
     <style>
         @media (prefers-color-scheme: dark) {
             body {
@@ -46,7 +46,7 @@
 <body>
 <main class="container">
     <div class="intro">
-        <h1>Third Party Licenses</h1>
+        <h1>Open source licenses</h1>
         <p>This page lists the licenses of the projects used in SearProxy.</p>
     </div>
 
@@ -66,7 +66,9 @@
                 <ul class="license-used-by">
                     {{#each used_by}}
                         <li>
-                            <a href="https://crates.io/crates/{{crate.name}}">{{crate.name}} {{crate.version}}</a>
+                            <a href="https://crates.io/crates/{{crate.name}}" target="_blank" rel="noopener noreferrer">
+                                {{crate.name}} {{crate.version}}
+                            </a>
                         </li>
                     {{/each}}
                 </ul>
