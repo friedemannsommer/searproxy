@@ -6,6 +6,8 @@ on:
       - main
     paths:
       - "Cargo.toml"
+      - "licensing/about.hbs"
+      - "licensing/about.toml"
       - ".github/workflows/licensing.yml"
 
 permissions:
