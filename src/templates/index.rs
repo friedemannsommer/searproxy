@@ -12,9 +12,7 @@ pub fn index(
         },
         content: markup::new! {
             h3 {
-                b {
-                    "WARNING"
-                }
+                b { "WARNING" }
                 " direct URL opening is not supported."
             }
         },
