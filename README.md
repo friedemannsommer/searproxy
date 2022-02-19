@@ -32,7 +32,10 @@ searproxy [OPTIONS] --hmac-secret <HMAC_SECRET> --listen <LISTEN_ADDRESS>
 * `HTTP_PROXY` - HTTP(s) / SOCKS5 proxy for outgoing HTTP(s) requests
 * `SEARPROXY_REQUEST_TIMEOUT` - Timeout in seconds to wait for a request to complete (default: 5s)
 
-## Third party licenses
+## Open source licenses
 
-A list of licenses for the projects used can be found
+A list of licenses for the projects used in SearProxy can be found
 here: [friedemannsommer.github.io/searproxy/licenses.html](https://friedemannsommer.github.io/searproxy/licenses.html).
+
+This product includes software developed by the OpenSSL Project for use in the OpenSSL
+Toolkit. ([www.openssl.org](https://www.openssl.org/))
