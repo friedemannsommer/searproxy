@@ -1,6 +1,6 @@
 markup::define! {
     HeaderTemplate(url: std::rc::Rc<url::Url>) {
-        div.__sp_header {
+        div {
             h1 {
                 @SelfRef { url: "./", content: "SearProxy" }
             }

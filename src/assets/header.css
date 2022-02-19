@@ -1,7 +1,8 @@
-body > div.__sp_header {
+body > div:first-child {
     background: #000;
     border: none;
     box-sizing: border-box;
+    display: block;
     height: auto;
     left: 0;
     margin: 0;
@@ -15,26 +16,31 @@ body > div.__sp_header {
     -webkit-box-sizing: border-box;
 }
 
-body > div.__sp_header:after {
+body > div:first-child:after {
     content: "";
     display: table;
     clear: both;
 }
 
-body > div.__sp_header > h1 {
+body > div:first-child > h1 {
     background: #000;
+    box-sizing: border-box;
     color: #fff;
+    display: block;
     float: left;
+    font-size: 20px;
     font-weight: bold;
     height: auto;
+    line-height: 30px;
     margin: 0;
     padding: 0;
     width: auto;
 }
 
-body > div.__sp_header > h1 > a, body > div.__sp_header > h1 > a:hover, body > div.__sp_header > h1 > a:active, body > div.__sp_header > h1 > a:focus, body > div.__sp_header > h1 > a:visited {
+body > div:first-child > h1 > a, body > div:first-child > h1 > a:hover, body > div:first-child > h1 > a:active, body > div:first-child > h1 > a:focus, body > div:first-child > h1 > a:visited {
     background: #000;
     border: none;
+    box-sizing: border-box;
     color: #fff;
     cursor: pointer;
     display: inline;
@@ -45,8 +51,9 @@ body > div.__sp_header > h1 > a, body > div.__sp_header > h1 > a:hover, body > d
     text-decoration: none;
 }
 
-body > div.__sp_header > p {
+body > div:first-child > p {
     background: #000;
+    box-sizing: border-box;
     color: #fff;
     display: block;
     float: right;
@@ -60,9 +67,10 @@ body > div.__sp_header > p {
     width: auto;
 }
 
-body > div.__sp_header > p > a, body > div.__sp_header > p > a:hover, body > div.__sp_header > p > a:active, body > div.__sp_header > p > a:focus, body > div.__sp_header > p > a:visited {
+body > div:first-child > p > a, body > div:first-child > p > a:hover, body > div:first-child > p > a:active, body > div:first-child > p > a:focus, body > div:first-child > p > a:visited {
     background: #000;
     border: none;
+    box-sizing: border-box;
     cursor: pointer;
     color: #fff;
     display: inline;
