@@ -46,7 +46,7 @@ pub async fn start_http_service() {
                 crate::assets::HEADER_STYLESHEET,
                 "text/css"
             ))
-            .route("/", actix_web::web::get().to(routes::handle_index))
+            .service(routes::handle_index)
     })
     .backlog(4096)
     .shutdown_timeout(5);
