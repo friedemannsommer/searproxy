@@ -19,7 +19,7 @@ allow = [
     "Apache-2.0",
     "MPL-2.0"
 ]
-copyleft = "allow"
+copyleft = "deny"
 allow-osi-fsf-free = "either"
 default = "deny"
 # [between 0.0 and 1.0].
