@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 mod assets;
 mod lib;
 mod model;
@@ -18,7 +16,7 @@ fn main() {
 fn get_config() -> model::Config<'static, 'static> {
     use clap::Parser;
 
-    let args: model::CliArgs = model::CliArgs::parse();
+    let args: model::Cli = model::Cli::parse();
 
     model::Config {
         follow_redirect: args.follow_redirect,
@@ -33,6 +31,8 @@ fn get_config() -> model::Config<'static, 'static> {
 }
 
 fn parse_socket_listener(input: &str) -> model::SocketListener {
+    use std::str::FromStr;
+
     if let Ok(address) = std::net::SocketAddr::from_str(input) {
         model::SocketListener::Tcp(address)
     } else if let Ok(path) = std::path::PathBuf::from_str(input) {

@@ -1,9 +1,27 @@
-use clap::Parser;
+const ABOUT_WITH_LICENSE: &str = "This is a SearX & SearXNG compatible web proxy which \
+excludes potentially malicious HTML tags. It also rewrites links to external resources \
+to prevent leaks.
 
-/// A SearX[NG] compatible web content sanitizer proxy
-#[derive(Parser, Debug)]
-#[clap(author, version, about, long_about = None)]
-pub struct Args {
+This program is free software: you can redistribute it and/or modify it under the terms \
+of the GNU Affero General Public License as published by the Free Software Foundation, \
+either version 3 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; \
+without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+See the GNU Affero General Public License for more details:
+<https://www.gnu.org/licenses/agpl-3.0.txt>
+
+This product includes software developed by the OpenSSL Project for use in \
+the OpenSSL Toolkit. <https://www.openssl.org/>";
+
+/// A SearX[NG] compatible web content sanitizer proxy.
+/// This program comes with ABSOLUTELY NO WARRANTY;
+/// This is free software, and you are welcome to redistribute it under certain conditions;
+/// type `--help` for more details.
+#[derive(clap::Parser, Debug)]
+#[clap(version, about, long_about = Some(ABOUT_WITH_LICENSE))]
+pub struct Cli {
     /// Allow "Location" response header following.
     #[clap(short, long, env = "SEARPROXY_FOLLOW_REDIRECTS")]
     pub follow_redirect: bool,
@@ -29,4 +47,16 @@ pub struct Args {
         default_value_t = 5
     )]
     pub request_timeout: u8,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Cli;
+
+    #[test]
+    fn verify_cli() {
+        use clap::CommandFactory;
+
+        Cli::command().debug_assert()
+    }
 }
