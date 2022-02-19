@@ -8,9 +8,7 @@ pub fn error<'error_detail>(
 > {
     Base {
         header: markup::new! {
-            h2 {
-                "Request failed"
-            }
+            h2 { "Request failed" }
         },
         content: markup::new! {
             @ if let Some(error_detail) = &error_detail_opt {
