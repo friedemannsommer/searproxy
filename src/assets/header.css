@@ -1,6 +1,7 @@
 body > div.__sp_header {
     background: #000;
     border: none;
+    box-sizing: border-box;
     height: auto;
     left: 0;
     margin: 0;
@@ -8,9 +9,10 @@ body > div.__sp_header {
     position: relative;
     right: 0;
     top: 0;
-    /* subtract (left + right) padding */
-    width: calc(100% - 8px);
+    width: 100%;
     z-index: 2147483647 !important;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
 }
 
 body > div.__sp_header:after {
@@ -23,12 +25,24 @@ body > div.__sp_header > h1 {
     background: #000;
     color: #fff;
     float: left;
-    font-family: "Open Sans", "Garamond", "Georgia", sans-serif;
-    font-size: 14px;
     font-weight: bold;
-    line-height: 20px;
+    height: auto;
     margin: 0;
     padding: 0;
+    width: auto;
+}
+
+body > div.__sp_header > h1 > a, body > div.__sp_header > h1 > a:hover, body > div.__sp_header > h1 > a:active, body > div.__sp_header > h1 > a:focus, body > div.__sp_header > h1 > a:visited {
+    background: #000;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    display: inline;
+    font-family: "Open Sans", "Garamond", "Georgia", sans-serif;
+    font-size: 20px;
+    font-weight: bold;
+    line-height: 30px;
+    text-decoration: none;
 }
 
 body > div.__sp_header > p {
@@ -37,21 +51,24 @@ body > div.__sp_header > p {
     display: block;
     float: right;
     font-family: "Open Sans", "Garamond", "Georgia", sans-serif;
-    font-size: 14px;
+    font-size: 20px;
     font-weight: normal;
-    line-height: 20px;
+    height: auto;
+    line-height: 30px;
     margin: 0;
     padding: 0;
+    width: auto;
 }
 
-body > div.__sp_header > p > a {
+body > div.__sp_header > p > a, body > div.__sp_header > p > a:hover, body > div.__sp_header > p > a:active, body > div.__sp_header > p > a:focus, body > div.__sp_header > p > a:visited {
     background: #000;
+    border: none;
     cursor: pointer;
     color: #fff;
     display: inline;
     font-family: "Open Sans", "Garamond", "Georgia", sans-serif;
-    font-size: 14px;
-    font-weight: bold;
-    line-height: 20px;
+    font-size: 20px;
+    font-weight: normal;
+    line-height: 30px;
     text-decoration: underline;
 }

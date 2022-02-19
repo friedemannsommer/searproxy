@@ -1,3 +1,7 @@
+use std::rc::Rc;
+
+use url::Url;
+
 use crate::lib::rewrite_url::{rewrite_url, RewriteUrlError};
 
 #[derive(thiserror::Error, Debug)]
@@ -21,8 +25,8 @@ enum MatchState {
     ClosingBracket,
 }
 
-pub struct CssRewrite<'url> {
-    base_url: &'url url::Url,
+pub struct CssRewrite {
+    base_url: Rc<url::Url>,
     buffer: Vec<u8>,
     last_index: usize,
     match_start: usize,
@@ -31,11 +35,11 @@ pub struct CssRewrite<'url> {
     url_start: usize,
 }
 
-impl<'url> CssRewrite<'url> {
-    pub fn new(base_url: &'url url::Url) -> Self {
+impl CssRewrite {
+    pub fn new(base_url: Rc<Url>) -> Self {
         Self {
             base_url,
-            buffer: Vec::with_capacity(0),
+            buffer: Vec::new(),
             last_index: 0,
             match_start: 0,
             match_state: MatchState::None,
@@ -178,7 +182,7 @@ impl<'url> CssRewrite<'url> {
 
     fn rewrite_url(&self, start: usize, end: usize) -> Result<String, RewriteCssError> {
         Ok(rewrite_url(
-            self.base_url,
+            &self.base_url,
             std::str::from_utf8(&self.buffer[start..end])?,
         )?)
     }
@@ -217,14 +221,16 @@ impl MatchState {
 
 #[cfg(test)]
 mod tests {
+    use std::rc::Rc;
+
     use crate::lib::rewrite_css::CssRewrite;
 
     #[test]
     fn no_quotes_relative_n_1() {
         crate::lib::test_setup_hmac();
 
-        let base_url = url::Url::parse("https://www.example.com").unwrap();
-        let mut rewriter = CssRewrite::new(&base_url);
+        let mut rewriter =
+            CssRewrite::new(Rc::new(url::Url::parse("https://www.example.com").unwrap()));
 
         rewriter.write(b"url(main.css)").unwrap();
 
@@ -235,8 +241,8 @@ mod tests {
     fn single_quotes_relative_n_1() {
         crate::lib::test_setup_hmac();
 
-        let base_url = url::Url::parse("https://www.example.com").unwrap();
-        let mut rewriter = CssRewrite::new(&base_url);
+        let mut rewriter =
+            CssRewrite::new(Rc::new(url::Url::parse("https://www.example.com").unwrap()));
 
         rewriter.write(b"url('main.css')").unwrap();
 
@@ -247,8 +253,8 @@ mod tests {
     fn double_quotes_relative_n_1() {
         crate::lib::test_setup_hmac();
 
-        let base_url = url::Url::parse("https://www.example.com").unwrap();
-        let mut rewriter = CssRewrite::new(&base_url);
+        let mut rewriter =
+            CssRewrite::new(Rc::new(url::Url::parse("https://www.example.com").unwrap()));
 
         rewriter.write(b"url(\"main.css\")").unwrap();
 
@@ -259,8 +265,8 @@ mod tests {
     fn no_quotes_relative_n_5() {
         crate::lib::test_setup_hmac();
 
-        let base_url = url::Url::parse("https://www.example.com").unwrap();
-        let mut rewriter = CssRewrite::new(&base_url);
+        let mut rewriter =
+            CssRewrite::new(Rc::new(url::Url::parse("https://www.example.com").unwrap()));
 
         rewriter
             .write("url(main.css)".repeat(5).as_bytes())
@@ -273,8 +279,8 @@ mod tests {
     fn single_quotes_relative_n_5() {
         crate::lib::test_setup_hmac();
 
-        let base_url = url::Url::parse("https://www.example.com").unwrap();
-        let mut rewriter = CssRewrite::new(&base_url);
+        let mut rewriter =
+            CssRewrite::new(Rc::new(url::Url::parse("https://www.example.com").unwrap()));
 
         rewriter
             .write("url('main.css')".repeat(5).as_bytes())
@@ -287,8 +293,8 @@ mod tests {
     fn double_quotes_relative_n_5() {
         crate::lib::test_setup_hmac();
 
-        let base_url = url::Url::parse("https://www.example.com").unwrap();
-        let mut rewriter = CssRewrite::new(&base_url);
+        let mut rewriter =
+            CssRewrite::new(Rc::new(url::Url::parse("https://www.example.com").unwrap()));
 
         rewriter
             .write("url(\"main.css\")".repeat(5).as_bytes())
@@ -301,8 +307,8 @@ mod tests {
     fn chunked_single_quote_n_1() {
         crate::lib::test_setup_hmac();
 
-        let base_url = url::Url::parse("https://www.example.com").unwrap();
-        let mut rewriter = CssRewrite::new(&base_url);
+        let mut rewriter =
+            CssRewrite::new(Rc::new(url::Url::parse("https://www.example.com").unwrap()));
 
         rewriter.write(b" ".repeat(2048).as_slice()).unwrap();
         rewriter.write(b"ur").unwrap();
@@ -322,8 +328,8 @@ mod tests {
     fn simple_single_quote_n_1() {
         crate::lib::test_setup_hmac();
 
-        let base_url = url::Url::parse("https://www.example.com").unwrap();
-        let mut rewriter = CssRewrite::new(&base_url);
+        let mut rewriter =
+            CssRewrite::new(Rc::new(url::Url::parse("https://www.example.com").unwrap()));
 
         rewriter
             .write(b"url('https://www.example.com/main.css')")
@@ -336,8 +342,8 @@ mod tests {
     fn chunked_double_quote_n_1() {
         crate::lib::test_setup_hmac();
 
-        let base_url = url::Url::parse("https://www.example.com").unwrap();
-        let mut rewriter = CssRewrite::new(&base_url);
+        let mut rewriter =
+            CssRewrite::new(Rc::new(url::Url::parse("https://www.example.com").unwrap()));
 
         rewriter.write(b" ".repeat(2048).as_slice()).unwrap();
         rewriter.write(b"ur").unwrap();
@@ -357,8 +363,8 @@ mod tests {
     fn simple_double_quote_n_1() {
         crate::lib::test_setup_hmac();
 
-        let base_url = url::Url::parse("https://www.example.com").unwrap();
-        let mut rewriter = CssRewrite::new(&base_url);
+        let mut rewriter =
+            CssRewrite::new(Rc::new(url::Url::parse("https://www.example.com").unwrap()));
 
         rewriter
             .write(b"url(\"https://www.example.com/main.css\")")
@@ -371,8 +377,8 @@ mod tests {
     fn chunked_no_quotes_n_1() {
         crate::lib::test_setup_hmac();
 
-        let base_url = url::Url::parse("https://www.example.com").unwrap();
-        let mut rewriter = CssRewrite::new(&base_url);
+        let mut rewriter =
+            CssRewrite::new(Rc::new(url::Url::parse("https://www.example.com").unwrap()));
 
         rewriter.write(b" ".repeat(2048).as_slice()).unwrap();
         rewriter.write(b"ur").unwrap();
@@ -390,8 +396,8 @@ mod tests {
     fn simple_no_quotes_n_1() {
         crate::lib::test_setup_hmac();
 
-        let base_url = url::Url::parse("https://www.example.com").unwrap();
-        let mut rewriter = CssRewrite::new(&base_url);
+        let mut rewriter =
+            CssRewrite::new(Rc::new(url::Url::parse("https://www.example.com").unwrap()));
 
         rewriter
             .write(b"url(https://www.example.com/main.css)")

@@ -1,16 +1,20 @@
 markup::define! {
-    HeaderTemplate<'url>(url: &'url str) {
+    HeaderTemplate(url: std::rc::Rc<url::Url>) {
         div.__sp_header {
             h1 {
-                "SearProxy"
+                @SelfRef { url: "./", content: "SearProxy" }
             }
             p {
                 "This is a proxified and sanitized version, visit "
-                a["href" = url, "target" = "_self", "rel" = "noreferrer noopener"] {
-                    "original page"
-                }
+                @SelfRef { url: url.as_str(), content: "original page" }
                 "."
             }
+        }
+    }
+
+    SelfRef<'url, Content: markup::Render>(url: &'url str, content: Content) {
+        a["href" = url, "target" = "_self", "rel" = "noreferrer noopener"] {
+            @content
         }
     }
 }

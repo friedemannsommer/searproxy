@@ -1,5 +1,6 @@
 use futures_util::StreamExt;
 
+use crate::lib::rewrite_html::HtmlRewriteResult;
 use crate::lib::{
     rewrite_css::{CssRewrite, RewriteCssError},
     rewrite_html::HtmlRewrite,
@@ -44,6 +45,7 @@ pub struct ClientResponse {
     pub body: BodyType,
     pub content_disposition: Option<reqwest::header::HeaderValue>,
     pub content_type: mime::Mime,
+    pub style_hashes: Option<Vec<String>>,
 }
 
 pub async fn fetch_validate_url(
@@ -114,42 +116,45 @@ async fn transform_response(response: reqwest::Response) -> Result<ClientRespons
 
     Ok(
         if content_type == mime::TEXT_HTML || content_type == mime::TEXT_HTML_UTF_8 {
+            let rewritten_html = transform_html(response).await?;
+
             ClientResponse {
-                body: BodyType::Complete(transform_html(response).await?),
+                body: BodyType::Complete(bytes::Bytes::from(rewritten_html.html)),
                 content_disposition: None,
                 content_type,
+                style_hashes: Some(rewritten_html.style_hashes),
             }
         } else if content_type == mime::TEXT_CSS || content_type == mime::TEXT_CSS_UTF_8 {
             ClientResponse {
                 body: BodyType::Complete(transform_css(response).await?),
                 content_disposition: None,
                 content_type,
+                style_hashes: None,
             }
         } else {
             ClientResponse {
                 content_disposition: headers.get(reqwest::header::CONTENT_DISPOSITION).cloned(),
                 body: BodyType::Stream(Box::pin(response.bytes_stream())),
                 content_type,
+                style_hashes: None,
             }
         },
     )
 }
 
-async fn transform_html(response: reqwest::Response) -> Result<bytes::Bytes, ClientError> {
-    let base_url = response.url().clone();
-    let mut rewriter = HtmlRewrite::new(&base_url);
+async fn transform_html(response: reqwest::Response) -> Result<HtmlRewriteResult, ClientError> {
+    let mut rewriter = HtmlRewrite::new(std::rc::Rc::new(response.url().clone()));
     let mut stream = response.bytes_stream();
 
     while let Some(chunk_res) = stream.next().await {
         rewriter.write(chunk_res?.as_ref())?;
     }
 
-    Ok(bytes::Bytes::from(rewriter.end()?))
+    Ok(rewriter.end()?)
 }
 
 async fn transform_css(response: reqwest::Response) -> Result<bytes::Bytes, ClientError> {
-    let base_url = response.url().clone();
-    let mut rewriter = CssRewrite::new(&base_url);
+    let mut rewriter = CssRewrite::new(std::rc::Rc::new(response.url().clone()));
     let mut stream = response.bytes_stream();
 
     while let Some(chunk_res) = stream.next().await {

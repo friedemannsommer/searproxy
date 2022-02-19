@@ -3,9 +3,9 @@ mod error;
 mod header;
 mod index;
 
-pub enum Template<'error_name, 'error_description, 'url> {
+pub enum Template<'error_name, 'error_description> {
     Error(Option<crate::server::lib::ErrorMessage<'error_name, 'error_description>>),
-    Header(&'url str),
+    Header(std::rc::Rc<url::Url>),
     Index,
 }
 

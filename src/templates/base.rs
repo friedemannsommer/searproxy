@@ -26,13 +26,38 @@ markup::define! {
                     @content
                 }
                 footer {
-                    a["href" = "https://github.com/friedemannsommer/searproxy", "target" = "_blank", "rel" = "noopener noreferrer"] {
-                        "Source code"
+                    p {
+                        @blank_ref("https://github.com/friedemannsommer/searproxy", "Source code")
+                        " | "
+                        @blank_ref("https://friedemannsommer.github.io/searproxy/licenses.html", "Open source licenses")
+                    }
+                    p {
+                        "This product includes software developed by the OpenSSL Project for use in the OpenSSL Toolkit. ("
+                        @blank_ref("https://www.openssl.org/", "www.openssl.org")
+                        ")"
                     }
                 }
             }
         }
     }
+
+    ExternalLinkTemplate<'url, Content: markup::Render>(
+        url: &'url str,
+        content: Content
+    ) {
+        a["href" = url, "target" = "_blank", "rel" = "noopener noreferrer"] {
+            @content
+        }
+    }
 }
 
+#[inline]
+pub fn blank_ref<Content: markup::Render>(
+    url: &str,
+    content: Content,
+) -> ExternalLinkTemplate<Content> {
+    ExternalLinkTemplate { url, content }
+}
+
+pub use ExternalLinkTemplate as ExternalLink;
 pub use Layout as Base;

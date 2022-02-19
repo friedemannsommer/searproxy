@@ -1,3 +1,5 @@
+use crate::server::lib::get_content_security_policy;
+
 static DEFAULT_LANGUAGE: actix_web::http::header::HeaderValue =
     actix_web::http::header::HeaderValue::from_static("en");
 
@@ -72,6 +74,13 @@ async fn fetch_url(
                 headers.insert(actix_web::http::header::CONTENT_DISPOSITION, value);
             }
 
+            if let Some(style_hashes) = client_res.style_hashes {
+                headers.insert(
+                    actix_web::http::header::CONTENT_SECURITY_POLICY,
+                    get_content_security_policy(Some(style_hashes)),
+                );
+            }
+
             if let Ok(value) =
                 actix_web::http::header::HeaderValue::from_str(client_res.content_type.as_ref())
             {
@@ -81,7 +90,7 @@ async fn fetch_url(
             response
         }
         Err(err) => {
-            log::error!("{:?}", err);
+            log::error!("fetch_validate_url: {:?}", err);
             crate::server::lib::get_error_response(err)
         }
     }
