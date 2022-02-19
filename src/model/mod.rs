@@ -1,4 +1,4 @@
-pub use cli::Args as CliArgs;
+pub use cli::Cli;
 pub use config::{Config, SocketListener};
 pub use index_http_query::HttpArgs as IndexHttpArgs;
 
