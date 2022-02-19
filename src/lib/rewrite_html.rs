@@ -497,7 +497,7 @@ mod tests {
         assert_eq!(
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
             // this is pretty finicky... (and will break if the "header.html" formatting changes)
-            "<body><div class=\"__sp_header\"><h1>SearProxy</h1><p>This is a proxified and sanitized version, visit <a href=\"https://www.example.com/index.html\" target=\"_self\" rel=\"noreferrer noopener\">original page</a>.</p></div><h1>Test</h1></body>"
+            "<body><div class=\"__sp_header\"><h1><a href=\"./\" target=\"_self\" rel=\"noreferrer noopener\">SearProxy</a></h1><p>This is a proxified and sanitized version, visit <a href=\"https://www.example.com/index.html\" target=\"_self\" rel=\"noreferrer noopener\">original page</a>.</p></div><h1>Test</h1></body>"
         );
     }
 
