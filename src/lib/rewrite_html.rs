@@ -95,6 +95,7 @@ impl<'html> HtmlRewrite<'html> {
                         lol_html::element!("*[href]", Self::transform_href(url.clone())),
                         lol_html::element!("*[src]", Self::transform_src(url.clone())),
                         lol_html::element!("img[srcset]", Self::transform_srcset(url.clone())),
+                        lol_html::element!("form", Self::transform_form),
                         lol_html::element!(
                             "style",
                             Self::transform_style(
@@ -235,6 +236,17 @@ impl<'html> HtmlRewrite<'html> {
         }
     }
 
+    fn transform_form(
+        element: &mut Element,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        // todo: this is a temporary workaround to prevent form submissions
+        // this will lead to a 405 since POST isn't supported (yet)
+        element.set_attribute("method", "POST")?;
+        element.set_attribute("target", "_self")?;
+
+        Ok(())
+    }
+
     fn append_proxy_header(
         base_url: Rc<url::Url>,
     ) -> impl Fn(&mut Element) -> Result<(), Box<dyn std::error::Error + Send + Sync>> + 'html {
@@ -307,7 +319,11 @@ mod tests {
 
         rewriter.write(b"<a href='/'>main</a>").unwrap();
 
-        assert_eq!(std::str::from_utf8( rewriter.end().unwrap().html.as_slice()).unwrap(), "<a href=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2F&mortyhash=85870232cac1676c4477f7cae4da7173ccee4002f32e89c16038547aa20175c0\">main</a>");
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
+            "<a href=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2F\
+        &mortyhash=85870232cac1676c4477f7cae4da7173ccee4002f32e89c16038547aa20175c0\">main</a>"
+        );
     }
 
     #[test]
@@ -320,7 +336,11 @@ mod tests {
 
         rewriter.write(b"<img src='/logo.png'>").unwrap();
 
-        assert_eq!(std::str::from_utf8( rewriter.end().unwrap().html.as_slice()).unwrap(), "<img src=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Flogo.png&mortyhash=2aa2717d139a63b3f3fc43fa862c8a73fc7814f1140b5279fc2758bc9d8cc1f9\">");
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
+            "<img src=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Flogo.png\
+        &mortyhash=2aa2717d139a63b3f3fc43fa862c8a73fc7814f1140b5279fc2758bc9d8cc1f9\">"
+        );
     }
 
     #[test]
@@ -335,7 +355,11 @@ mod tests {
             .write(b"<iframe src='/test.html'></iframe>")
             .unwrap();
 
-        assert_eq!(std::str::from_utf8( rewriter.end().unwrap().html.as_slice()).unwrap(), "<iframe src=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Ftest.html&mortyhash=48b7184730b6c78c9b4231f70560f92bdc09188ab27871d9489a372b3b47a9e1\"></iframe>");
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
+            "<iframe src=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Ftest.html\
+        &mortyhash=48b7184730b6c78c9b4231f70560f92bdc09188ab27871d9489a372b3b47a9e1\"></iframe>"
+        );
     }
 
     #[test]
@@ -366,7 +390,8 @@ mod tests {
 
         assert_eq!(
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
-            "<img srcset=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Fheader640.png&mortyhash=bf2aa9174435adfc3616a7bbb7f34e42cc7935e34feb23e0f6001b3acf2ceee0 640w, ./?mortyurl=https%3A%2F%2Fwww.example.com%2Fheader960.png&mortyhash=197fbfa4294a326f377651d2297f8ed5bf45018210e8615c7ee5dd7fad7037ec 960w, ./?mortyurl=https%3A%2F%2Fwww.example.com%2Fheader1024.png&mortyhash=d056d2f2316e7d9a1be4f34d7b430af80a610a87dc7616ae6d8d3d27cd84aef1 1024w, ./?mortyurl=https%3A%2F%2Fwww.example.com%2Fheader.png&mortyhash=890ee860e875afc9c56d972f1f44d64b55d93aeaf73a7f24e1cd43fc5806a414\">"
+            "<img srcset=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Fheader640.png&mortyhash=bf2aa9174435adfc3616a7bbb7f34e42cc7935e34feb23e0f6001b3acf2ceee0 640w, \
+            ./?mortyurl=https%3A%2F%2Fwww.example.com%2Fheader960.png&mortyhash=197fbfa4294a326f377651d2297f8ed5bf45018210e8615c7ee5dd7fad7037ec 960w, ./?mortyurl=https%3A%2F%2Fwww.example.com%2Fheader1024.png&mortyhash=d056d2f2316e7d9a1be4f34d7b430af80a610a87dc7616ae6d8d3d27cd84aef1 1024w, ./?mortyurl=https%3A%2F%2Fwww.example.com%2Fheader.png&mortyhash=890ee860e875afc9c56d972f1f44d64b55d93aeaf73a7f24e1cd43fc5806a414\">"
         );
     }
 
@@ -497,7 +522,8 @@ mod tests {
         assert_eq!(
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
             // this is pretty finicky... (and will break if the "header.html" formatting changes)
-            "<body><div class=\"__sp_header\"><h1><a href=\"./\" target=\"_self\" rel=\"noreferrer noopener\">SearProxy</a></h1><p>This is a proxified and sanitized version, visit <a href=\"https://www.example.com/index.html\" target=\"_self\" rel=\"noreferrer noopener\">original page</a>.</p></div><h1>Test</h1></body>"
+            "<body><div><h1><a href=\"./\" target=\"_self\" rel=\"noreferrer noopener\">SearProxy</a></h1><p>This is a proxified and sanitized version, visit \
+            <a href=\"https://www.example.com/index.html\" target=\"_self\" rel=\"noreferrer noopener\">original page</a>.</p></div><h1>Test</h1></body>"
         );
     }
 
@@ -514,6 +540,64 @@ mod tests {
         assert_eq!(
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
             "<head><title>Test</title><link rel=\"stylesheet\" href=\"./header.css\"></head>"
+        );
+    }
+
+    #[test]
+    fn rewrite_style_plain_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let mut rewriter = HtmlRewrite::new(Rc::new(
+            url::Url::parse("https://www.example.com/").unwrap(),
+        ));
+
+        rewriter
+            .write(b"<head><style>a{color:red}</style></head>")
+            .unwrap();
+
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
+            "<head><style>a{color:red}</style><link rel=\"stylesheet\" href=\"./header.css\"></head>"
+        );
+    }
+
+    #[test]
+    fn rewrite_style_url_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let mut rewriter = HtmlRewrite::new(Rc::new(
+            url::Url::parse("https://www.example.com/").unwrap(),
+        ));
+
+        rewriter
+            .write(b"<head><style>body{background-image:url('/main.css')}</style></head>")
+            .unwrap();
+
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
+            "<head><style>body{background-image:url('./?mortyurl=https%3A%2F%2Fwww.example.com%2Fmain.css&amp;mortyhash=7d40cd69599262cfe009ac148491a37e9ec47dcf2386c2807bc2255fff6d5fa3')}</style>\
+            <link rel=\"stylesheet\" href=\"./header.css\"></head>"
+        );
+    }
+
+    #[test]
+    fn rewrite_style_url_n_3() {
+        crate::lib::test_setup_hmac();
+
+        let mut rewriter = HtmlRewrite::new(Rc::new(
+            url::Url::parse("https://www.example.com/").unwrap(),
+        ));
+
+        rewriter
+            .write(b"<head><style>url('/main.css')</style><style>url('/index.css')</style><style>url('/theme.css')</style></head>")
+            .unwrap();
+
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
+            "<head><style>url('./?mortyurl=https%3A%2F%2Fwww.example.com%2Fmain.css&amp;mortyhash=7d40cd69599262cfe009ac148491a37e9ec47dcf2386c2807bc2255fff6d5fa3')</style>\
+            <style>url('./?mortyurl=https%3A%2F%2Fwww.example.com%2Findex.css&amp;mortyhash=de26b17e7788f85987457601375a920242dee16379bd17769fe6b6fbcb90cfcf')</style>\
+            <style>url('./?mortyurl=https%3A%2F%2Fwww.example.com%2Ftheme.css&amp;mortyhash=ddc8ae45cdbef1f3ddfc778ba578b36666f3b2541de07d5efbc1a2584a3e913c')</style>\
+            <link rel=\"stylesheet\" href=\"./header.css\"></head>"
         );
     }
 }
