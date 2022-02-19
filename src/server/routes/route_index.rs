@@ -3,7 +3,8 @@ use crate::server::lib::get_content_security_policy;
 static DEFAULT_LANGUAGE: actix_web::http::header::HeaderValue =
     actix_web::http::header::HeaderValue::from_static("en");
 
-pub async fn handle_request(
+#[actix_web::get("/")]
+pub async fn handle_get_request(
     query: actix_web::web::Query<crate::model::IndexHttpArgs>,
     http_request: actix_web::web::HttpRequest,
 ) -> actix_web::HttpResponse {
