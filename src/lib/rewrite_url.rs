@@ -17,24 +17,44 @@ pub fn rewrite_url(base_url: &url::Url, url: &str) -> Result<String, RewriteUrlE
         } else {
             Err(RewriteUrlError::DataUriRejected(String::from(url)))
         };
+    } else if url.starts_with('#') {
+        // since a fragment is client side, there is no need to rewrite this
+        return Ok(String::from(url));
     }
 
     let mut hmac = match crate::lib::HMAC.get() {
         Some(instance) => instance.clone(),
         None => return Err(RewriteUrlError::HmacInstance),
     };
-    let next_base_url = base_url.join(url)?;
+    let mut next_base_url = base_url.join(url)?;
+    // `./?` (3) + `mortyurl` (8) + `mortyhash` (9) + "hash" (64) + `next_base_url.len()` (* 2 [for url encoding])
+    let mut result = String::with_capacity(3 + 8 + 9 + 64 + (next_base_url.as_str().len() * 2));
+    let next_url_fragment: Option<String> = next_base_url.fragment().map(String::from);
+    let _capacity = result.capacity();
+
+    if next_url_fragment.is_some() {
+        // exclude fragment from request URL
+        next_base_url.set_fragment(None);
+    }
+
     let next_url = next_base_url.to_string();
 
     hmac.update(next_url.as_bytes());
-
-    Ok(format!(
-        "./?{}",
+    result.push_str("./?");
+    result.push_str(
         serde_qs::to_string(&crate::model::IndexHttpArgs {
             hash: Some(hex::encode(&hmac.finalize())),
-            url: Some(next_url)
+            url: Some(next_url),
         })?
-    ))
+        .as_str(),
+    );
+
+    if let Some(fragment) = next_url_fragment {
+        result.push('#');
+        result.push_str(fragment.as_str());
+    }
+
+    Ok(result)
 }
 
 #[cfg(test)]
@@ -127,5 +147,35 @@ mod tests {
             "data:text/plain;base64,dGVzdA=="
         )
         .is_err());
+    }
+
+    #[test]
+    fn pass_through_fragment_ref() {
+        crate::lib::test_setup_hmac();
+
+        assert_eq!(
+            rewrite_url(&url::Url::parse("https://example.com/").unwrap(), "#about").unwrap(),
+            "#about"
+        );
+    }
+
+    #[test]
+    fn rewrite_prefixed_path_fragment_ref() {
+        crate::lib::test_setup_hmac();
+
+        assert_eq!(
+            rewrite_url(&url::Url::parse("https://example.com/").unwrap(), "/home/#about").unwrap(),
+            "./?mortyurl=https%3A%2F%2Fexample.com%2Fhome%2F&mortyhash=3af87c981235827014507736715a403ebd2f9c875689318184ba2cc035ea3e61#about"
+        );
+    }
+
+    #[test]
+    fn rewrite_prefixed_fragment_ref() {
+        crate::lib::test_setup_hmac();
+
+        assert_eq!(
+            rewrite_url(&url::Url::parse("https://example.com/").unwrap(), "https://another.example.com/#about").unwrap(),
+            "./?mortyurl=https%3A%2F%2Fanother.example.com%2F&mortyhash=743bb69ce433c306c9883528f2a7b451531362a1d41bbf6519ed97cdb81b907b#about"
+        );
     }
 }
