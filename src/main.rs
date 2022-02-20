@@ -85,6 +85,7 @@ fn set_shared_values(config: model::Config<'static, 'static>) {
         } else {
             reqwest::redirect::Policy::none()
         })
+        .trust_dns(true)
         .tcp_nodelay(true)
         .tcp_keepalive(None)
         .timeout(std::time::Duration::from_secs(
