@@ -2,7 +2,6 @@ use crate::{
     lib::{ClientError, FormRequest},
     server::lib::{accepted_languages, fetch_url},
 };
-use actix_web::HttpMessage;
 
 #[actix_web::get("/")]
 pub async fn handle_get_request(
