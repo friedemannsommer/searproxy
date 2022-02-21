@@ -1,5 +1,5 @@
 use crate::{
-    lib::{ClientError, PostRequest},
+    lib::{ClientError, FormRequest},
     server::lib::{accepted_languages, fetch_url},
 };
 use actix_web::HttpMessage;
@@ -33,29 +33,26 @@ pub async fn handle_post_request(
 
     if let Some(url) = query.url.as_deref() {
         if let Some(hash) = query.hash.as_deref() {
-            if let Ok(Some(mime_type)) = http_request.mime_type() {
-                let origin_method = body
-                    .remove("_searproxy_origin_method")
-                    .map(|m| m.to_ascii_uppercase());
-                let method = origin_method.as_deref().unwrap_or("GET");
+            let origin_method = body
+                .remove("_searproxy_origin_method")
+                .map(|m| m.to_ascii_uppercase());
+            let method = origin_method.as_deref().unwrap_or("GET");
 
-                return fetch_url(
-                    response,
-                    url,
-                    hash,
-                    accepted_languages(&http_request),
-                    Some(PostRequest {
-                        body: body.into_inner(),
-                        method: if method.trim() == "GET" {
-                            reqwest::Method::GET
-                        } else {
-                            reqwest::Method::POST
-                        },
-                        mime: mime_type,
-                    }),
-                )
-                .await;
-            }
+            return fetch_url(
+                response,
+                url,
+                hash,
+                accepted_languages(&http_request),
+                Some(FormRequest {
+                    body: body.into_inner(),
+                    method: if method.trim() == "GET" {
+                        reqwest::Method::GET
+                    } else {
+                        reqwest::Method::POST
+                    },
+                }),
+            )
+            .await;
         }
     }
 

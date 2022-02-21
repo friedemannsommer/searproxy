@@ -1,9 +1,9 @@
 use futures_util::StreamExt;
 
-use crate::lib::rewrite_html::HtmlRewriteResult;
 use crate::lib::{
     rewrite_css::{CssRewrite, RewriteCssError},
     rewrite_html::HtmlRewrite,
+    rewrite_html::HtmlRewriteResult,
 };
 
 #[derive(thiserror::Error, Debug)]
@@ -43,10 +43,9 @@ pub enum BodyType {
     ),
 }
 
-pub struct PostRequest {
+pub struct FormRequest {
     pub body: std::collections::HashMap<String, String>,
     pub method: reqwest::Method,
-    pub mime: mime::Mime,
 }
 
 pub struct ClientResponse {
@@ -60,7 +59,7 @@ pub async fn fetch_validate_url(
     url: &str,
     hash: &str,
     acceptable_languages: &str,
-    request_body_opt: Option<PostRequest>,
+    request_body_opt: Option<FormRequest>,
 ) -> Result<ClientResponse, ClientError> {
     use std::str::FromStr;
 

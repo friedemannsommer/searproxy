@@ -1,11 +1,11 @@
-use crate::{lib::PostRequest, server::lib::get_content_security_policy};
+use crate::{lib::FormRequest, server::lib::get_content_security_policy};
 
 pub async fn fetch_url(
     mut response: actix_web::HttpResponse,
     url: &str,
     hash: &str,
     languages: &str,
-    request_body: Option<PostRequest>,
+    request_body: Option<FormRequest>,
 ) -> actix_web::HttpResponse {
     match crate::lib::fetch_validate_url(url, hash, languages, request_body).await {
         Ok(client_res) => {
