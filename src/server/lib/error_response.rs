@@ -12,7 +12,9 @@ pub fn get_error_response(error_detail: ClientError) -> actix_web::HttpResponse 
     let mut response = actix_web::HttpResponse::with_body(
         match error_detail {
             ClientError::InvalidHash => actix_web::http::StatusCode::UNAUTHORIZED,
-            ClientError::Hex(_) => actix_web::http::StatusCode::BAD_REQUEST,
+            ClientError::Hex(_) | ClientError::BadRequest => {
+                actix_web::http::StatusCode::BAD_REQUEST
+            }
             _ => actix_web::http::StatusCode::INTERNAL_SERVER_ERROR,
         },
         actix_web::body::BoxBody::new(crate::templates::render_template_string(
@@ -51,6 +53,10 @@ fn get_error_message(error_detail: ClientError) -> Option<ErrorMessage<'static, 
         ClientError::Hex(_) => Some(ErrorMessage {
             name: Cow::Borrowed("Invalid hash"),
             description: Cow::Borrowed("The given hash must be valid hexadecimal."),
+        }),
+        ClientError::BadRequest => Some(ErrorMessage {
+            name: Cow::Borrowed("Bad request"),
+            description: Cow::Owned(error_detail.to_string()),
         }),
         _ => None,
     }

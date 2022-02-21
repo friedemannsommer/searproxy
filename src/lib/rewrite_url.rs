@@ -6,8 +6,6 @@ pub enum RewriteUrlError {
     UrlParse(#[from] url::ParseError),
     #[error("Serialization failed")]
     Serialize(#[from] serde_qs::Error),
-    #[error("data URI scheme rejected")]
-    DataUriRejected(String),
 }
 
 pub fn rewrite_url(base_url: &url::Url, url: &str) -> Result<String, RewriteUrlError> {
@@ -15,7 +13,7 @@ pub fn rewrite_url(base_url: &url::Url, url: &str) -> Result<String, RewriteUrlE
         return if url.starts_with("data:image/") {
             Ok(String::from(url))
         } else {
-            Err(RewriteUrlError::DataUriRejected(String::from(url)))
+            Ok(String::new())
         };
     } else if url.starts_with('#') {
         // since a fragment is client side, there is no need to rewrite this
@@ -131,22 +129,28 @@ mod tests {
     fn reject_data_script() {
         crate::lib::test_setup_hmac();
 
-        assert!(rewrite_url(
-            &url::Url::parse("https://example.com/").unwrap(),
-            "data:application/javascript;base64,dGVzdA=="
-        )
-        .is_err());
+        assert_eq!(
+            rewrite_url(
+                &url::Url::parse("https://example.com/").unwrap(),
+                "data:application/javascript;base64,dGVzdA=="
+            )
+            .unwrap(),
+            String::new()
+        );
     }
 
     #[test]
     fn reject_data_text() {
         crate::lib::test_setup_hmac();
 
-        assert!(rewrite_url(
-            &url::Url::parse("https://example.com/").unwrap(),
-            "data:text/plain;base64,dGVzdA=="
-        )
-        .is_err());
+        assert_eq!(
+            rewrite_url(
+                &url::Url::parse("https://example.com/").unwrap(),
+                "data:text/plain;base64,dGVzdA=="
+            )
+            .unwrap(),
+            String::new()
+        );
     }
 
     #[test]

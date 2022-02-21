@@ -2,8 +2,7 @@ use std::{cell::RefCell, collections::HashSet, rc::Rc};
 
 use lol_html::html_content::{Element, EndTag, TextChunk};
 
-use crate::lib::rewrite_css::CssRewrite;
-use crate::lib::rewrite_url::rewrite_url;
+use crate::lib::{rewrite_css::CssRewrite, rewrite_url::rewrite_url};
 
 type CssRewriteRef = Rc<RefCell<Option<CssRewrite>>>;
 type StyleHashList = Rc<RefCell<Vec<String>>>;
@@ -19,8 +18,25 @@ pub struct HtmlRewriteResult {
     pub style_hashes: Vec<String>,
 }
 
+const ALLOWED_META_EQUIV_VALUES: [&str; 3] = ["content-type", "refresh", "x-ua-compatible"];
+const ALLOWED_META_ATTRIBUTES: [&str; 3] = ["charset", "content", "http-equiv"];
+const ALLOWED_LINK_REL_VALUES: [&str; 7] = [
+    "alternate stylesheet",
+    "alternate",
+    "help",
+    "icon",
+    "license",
+    "shortcut icon",
+    "stylesheet",
+];
+
 static IMG_SRCSET_REGEX: once_cell::sync::Lazy<regex::Regex> = once_cell::sync::Lazy::new(|| {
     regex::Regex::new(r"(?P<url>[\w#!:.?+=&%@!\-/]+)(\s+(?:[0-9]+\.)?[0-9]+[xw]\s*[,$]?|$)")
+        .expect("RegExp compilation failed")
+});
+
+static META_EQUIV_REFRESH: once_cell::sync::Lazy<regex::Regex> = once_cell::sync::Lazy::new(|| {
+    regex::Regex::new(r"(?i)[0-9]+\s*;\s*url\s*=\s*(?P<url>[^$]+)")
         .expect("RegExp compilation failed")
 });
 
@@ -29,6 +45,7 @@ static ALLOWED_ATTRIBUTES: once_cell::sync::Lazy<HashSet<&'static str>> =
         HashSet::from([
             "abbr",
             "accesskey",
+            "action",
             "align",
             "alt",
             "as",
@@ -38,7 +55,6 @@ static ALLOWED_ATTRIBUTES: once_cell::sync::Lazy<HashSet<&'static str>> =
             "class",
             "content",
             "contenteditable",
-            "contextmenu",
             "csp",
             "dir",
             "disabled",
@@ -86,16 +102,19 @@ impl<'html> HtmlRewrite<'html> {
                 lol_html::Settings {
                     element_content_handlers: vec![
                         lol_html::element!("applet", Self::remove_element),
+                        lol_html::element!("base", Self::remove_element),
                         lol_html::element!("canvas", Self::remove_element),
                         lol_html::element!("embed", Self::remove_element),
+                        lol_html::element!("link", Self::filter_link_elements),
                         lol_html::element!("math", Self::remove_element),
+                        lol_html::element!("meta", Self::filter_meta_elements(url.clone())),
                         lol_html::element!("script", Self::remove_element),
                         lol_html::element!("svg", Self::remove_element),
                         lol_html::element!("*", Self::remove_disallowed_attributes),
                         lol_html::element!("*[href]", Self::transform_href(url.clone())),
                         lol_html::element!("*[src]", Self::transform_src(url.clone())),
                         lol_html::element!("img[srcset]", Self::transform_srcset(url.clone())),
-                        lol_html::element!("form", Self::transform_form),
+                        lol_html::element!("form", Self::transform_form(url.clone())),
                         lol_html::element!(
                             "style",
                             Self::transform_style(
@@ -237,14 +256,88 @@ impl<'html> HtmlRewrite<'html> {
     }
 
     fn transform_form(
+        base_url: Rc<url::Url>,
+    ) -> impl Fn(&mut Element) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        move |element: &mut Element| {
+            use std::str::FromStr;
+
+            element.set_attribute("target", "_self")?;
+
+            if let Some(method) = element.get_attribute("method") {
+                element.prepend(
+                    format!(
+                        r#"<input type="hidden" name="_searproxy_origin_method" value="{}">"#,
+                        actix_web::http::Method::from_str(&method)?
+                    )
+                    .as_str(),
+                    lol_html::html_content::ContentType::Html,
+                );
+            }
+
+            element.set_attribute("method", "POST")?;
+
+            if let Some(action) = element.get_attribute("action") {
+                element.set_attribute(
+                    "action",
+                    rewrite_url(base_url.as_ref(), action.trim())?.as_str(),
+                )?;
+            }
+
+            Ok(())
+        }
+    }
+
+    fn filter_link_elements(
         element: &mut Element,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        // todo: this is a temporary workaround to prevent form submissions
-        // this will lead to a 405 since POST isn't supported (yet)
-        element.set_attribute("method", "POST")?;
-        element.set_attribute("target", "_self")?;
+        if let Some(rel) = element.get_attribute("rel") {
+            if !ALLOWED_LINK_REL_VALUES.contains(&rel.to_ascii_lowercase().as_str()) {
+                element.remove()
+            }
+        } else {
+            element.remove()
+        }
 
         Ok(())
+    }
+
+    fn filter_meta_elements(
+        base_url: Rc<url::Url>,
+    ) -> impl Fn(&mut Element) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        move |element: &mut Element| {
+            if let Some(http_equiv) = element.get_attribute("http-equiv") {
+                let lc_equiv = http_equiv.to_ascii_lowercase();
+                let lc_equiv_trim = lc_equiv.trim();
+
+                if !ALLOWED_META_EQUIV_VALUES.contains(&lc_equiv_trim) {
+                    element.remove()
+                }
+
+                if lc_equiv_trim == "refresh" {
+                    if let Some(content) = element.get_attribute("content") {
+                        if let Some(refresh_capture) = META_EQUIV_REFRESH.captures(&content) {
+                            if let Some(url_match) = refresh_capture.name("url") {
+                                let next_url = rewrite_url(&base_url, url_match.as_str().trim())?;
+
+                                element.set_attribute(
+                                    "content",
+                                    format!("{}{}", &content[..url_match.start()], next_url)
+                                        .as_str(),
+                                )?;
+
+                                return Ok(());
+                            }
+                        }
+                    }
+
+                    element.remove()
+                }
+            } else if !element.has_attribute("charset") {
+                element.remove()
+            }
+
+            Ok(())
+        }
     }
 
     fn append_proxy_header(
@@ -277,6 +370,23 @@ impl<'html> HtmlRewrite<'html> {
     fn remove_disallowed_attributes(
         element: &mut Element,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        if element.tag_name() == "meta" {
+            let mut should_remove = false;
+
+            for attr in element.attributes() {
+                if !ALLOWED_META_ATTRIBUTES.contains(&attr.name().as_str()) {
+                    should_remove = true;
+                    break;
+                }
+            }
+
+            if should_remove {
+                element.remove()
+            }
+
+            return Ok(());
+        }
+
         let mut remove_attributes = Vec::<String>::new();
 
         for attr in element.attributes() {
@@ -598,6 +708,254 @@ mod tests {
             <style>url('./?mortyurl=https%3A%2F%2Fwww.example.com%2Findex.css&amp;mortyhash=de26b17e7788f85987457601375a920242dee16379bd17769fe6b6fbcb90cfcf')</style>\
             <style>url('./?mortyurl=https%3A%2F%2Fwww.example.com%2Ftheme.css&amp;mortyhash=ddc8ae45cdbef1f3ddfc778ba578b36666f3b2541de07d5efbc1a2584a3e913c')</style>\
             <link rel=\"stylesheet\" href=\"./header.css\"></head>"
+        );
+    }
+
+    #[test]
+    fn rewrite_link_icon_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let mut rewriter = HtmlRewrite::new(Rc::new(
+            url::Url::parse("https://www.example.com/").unwrap(),
+        ));
+
+        rewriter
+            .write(b"<link rel=\"icon\" href=\"favicon.ico\">")
+            .unwrap();
+
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
+            "<link rel=\"icon\" href=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Ffavicon.ico&mortyhash=fc10bed0a5b7786553e4f658be6029176875e29fe645f32251c0b7427b4f057d\">"
+        );
+    }
+
+    #[test]
+    fn rewrite_link_shortcut_icon_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let mut rewriter = HtmlRewrite::new(Rc::new(
+            url::Url::parse("https://www.example.com/").unwrap(),
+        ));
+
+        rewriter
+            .write(b"<link rel=\"shortcut icon\" href=\"favicon.ico\">")
+            .unwrap();
+
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
+            "<link rel=\"shortcut icon\" href=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Ffavicon.ico&mortyhash=fc10bed0a5b7786553e4f658be6029176875e29fe645f32251c0b7427b4f057d\">"
+        );
+    }
+
+    #[test]
+    fn rewrite_link_stylesheet_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let mut rewriter = HtmlRewrite::new(Rc::new(
+            url::Url::parse("https://www.example.com/").unwrap(),
+        ));
+
+        rewriter
+            .write(b"<link href=\"default.css\" rel=\"stylesheet\" type=\"text/css\">")
+            .unwrap();
+
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
+            "<link href=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Fdefault.css&mortyhash=766b24ce591a42a33d5946c2c7382586c8f2ab501b40f5e154416298feb2565f\" rel=\"stylesheet\" type=\"text/css\">"
+        );
+    }
+
+    #[test]
+    fn rewrite_link_alternate_stylesheet_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let mut rewriter = HtmlRewrite::new(Rc::new(
+            url::Url::parse("https://www.example.com/").unwrap(),
+        ));
+
+        rewriter
+            .write(b"<link href=\"basic.css\" rel=\"alternate stylesheet\" type=\"text/css\">")
+            .unwrap();
+
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
+            "<link href=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Fbasic.css&mortyhash=d5e4d42ff654522f6560ce8f8e689aab36c2df2bed12109b6d90b506a519d785\" rel=\"alternate stylesheet\" type=\"text/css\">"
+        );
+    }
+
+    #[test]
+    fn rewrite_link_help_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let mut rewriter = HtmlRewrite::new(Rc::new(
+            url::Url::parse("https://www.example.com/").unwrap(),
+        ));
+
+        rewriter.write(b"<link href=\"/a\" rel=\"help\">").unwrap();
+
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
+            "<link href=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Fa&mortyhash=d2269853e1eda4c3f07592ef3742218dfa63c210d29f0fe3ea16f460efa164e8\" rel=\"help\">"
+        );
+    }
+
+    #[test]
+    fn rewrite_link_license_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let mut rewriter = HtmlRewrite::new(Rc::new(
+            url::Url::parse("https://www.example.com/").unwrap(),
+        ));
+
+        rewriter
+            .write(b"<link href=\"/a\" rel=\"license\">")
+            .unwrap();
+
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
+            "<link href=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Fa&mortyhash=d2269853e1eda4c3f07592ef3742218dfa63c210d29f0fe3ea16f460efa164e8\" rel=\"license\">"
+        );
+    }
+
+    #[test]
+    fn rewrite_link_alternate_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let mut rewriter = HtmlRewrite::new(Rc::new(
+            url::Url::parse("https://www.example.com/").unwrap(),
+        ));
+
+        rewriter
+            .write(b"<link href=\"/rss\" rel=\"alternate\" type=\"application/rss+xml\">")
+            .unwrap();
+
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
+            "<link href=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Frss&mortyhash=39c396215376bfb80ae7cfca44b10d145d593d8e326fc2138841bf03cddd042a\" rel=\"alternate\" type=\"application/rss+xml\">"
+        );
+    }
+
+    #[test]
+    fn rewrite_meta_content_type_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let mut rewriter = HtmlRewrite::new(Rc::new(
+            url::Url::parse("https://www.example.com/").unwrap(),
+        ));
+
+        rewriter
+            .write(b"<meta http-equiv=\"content-type\" content=\"text/html; charset=utf-8\">")
+            .unwrap();
+
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
+            "<meta http-equiv=\"content-type\" content=\"text/html; charset=utf-8\">"
+        );
+    }
+
+    #[test]
+    fn rewrite_meta_ua_compatible_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let mut rewriter = HtmlRewrite::new(Rc::new(
+            url::Url::parse("https://www.example.com/").unwrap(),
+        ));
+
+        rewriter
+            .write(b"<meta http-equiv=\"x-ua-compatible\" content=\"IE=edge\">")
+            .unwrap();
+
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
+            "<meta http-equiv=\"x-ua-compatible\" content=\"IE=edge\">"
+        );
+    }
+
+    #[test]
+    fn rewrite_meta_refresh_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let mut rewriter = HtmlRewrite::new(Rc::new(
+            url::Url::parse("https://www.example.com/").unwrap(),
+        ));
+
+        rewriter
+            .write(b"<meta http-equiv=\"refresh\" content=\"1;url=/a\">")
+            .unwrap();
+
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
+            "<meta http-equiv=\"refresh\" content=\"1;url=./?mortyurl=https%3A%2F%2Fwww.example.com%2Fa&mortyhash=d2269853e1eda4c3f07592ef3742218dfa63c210d29f0fe3ea16f460efa164e8\">"
+        );
+    }
+
+    #[test]
+    fn rewrite_form_method_get_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let mut rewriter = HtmlRewrite::new(Rc::new(
+            url::Url::parse("https://www.example.com/").unwrap(),
+        ));
+
+        rewriter
+            .write(b"<form method=\"get\" action=\"/a\"></form>")
+            .unwrap();
+
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
+            "<form method=\"POST\" action=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Fa&mortyhash=d2269853e1eda4c3f07592ef3742218dfa63c210d29f0fe3ea16f460efa164e8\" target=\"_self\">\
+            <input type=\"hidden\" name=\"_searproxy_origin_method\" value=\"get\"></form>"
+        );
+    }
+
+    #[test]
+    fn rewrite_form_method_post_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let mut rewriter = HtmlRewrite::new(Rc::new(
+            url::Url::parse("https://www.example.com/").unwrap(),
+        ));
+
+        rewriter
+            .write(b"<form method=\"Post\" action=\"/a\"></form>")
+            .unwrap();
+
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
+            "<form method=\"POST\" action=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Fa&mortyhash=d2269853e1eda4c3f07592ef3742218dfa63c210d29f0fe3ea16f460efa164e8\" target=\"_self\">\
+            <input type=\"hidden\" name=\"_searproxy_origin_method\" value=\"Post\"></form>"
+        );
+    }
+
+    #[test]
+    fn rewrite_form_no_method_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let mut rewriter = HtmlRewrite::new(Rc::new(
+            url::Url::parse("https://www.example.com/").unwrap(),
+        ));
+
+        rewriter.write(b"<form action=\"/a\"></form>").unwrap();
+
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
+            "<form action=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Fa&mortyhash=d2269853e1eda4c3f07592ef3742218dfa63c210d29f0fe3ea16f460efa164e8\" target=\"_self\" method=\"POST\"></form>"
+        );
+    }
+
+    #[test]
+    fn rewrite_form_no_action_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let mut rewriter = HtmlRewrite::new(Rc::new(
+            url::Url::parse("https://www.example.com/").unwrap(),
+        ));
+
+        rewriter.write(b"<form></form>").unwrap();
+
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
+            "<form target=\"_self\" method=\"POST\"></form>"
         );
     }
 }
