@@ -266,7 +266,7 @@ impl<'html> HtmlRewrite<'html> {
             if let Some(method) = element.get_attribute("method") {
                 element.prepend(
                     format!(
-                        "<input type='hidden' name='_searproxy_origin_method' value='{}'>",
+                        r#"<input type="hidden" name="_searproxy_origin_method" value="{}">"#,
                         actix_web::http::Method::from_str(&method)?
                     )
                     .as_str(),
@@ -886,6 +886,76 @@ mod tests {
         assert_eq!(
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
             "<meta http-equiv=\"refresh\" content=\"1;url=./?mortyurl=https%3A%2F%2Fwww.example.com%2Fa&mortyhash=d2269853e1eda4c3f07592ef3742218dfa63c210d29f0fe3ea16f460efa164e8\">"
+        );
+    }
+
+    #[test]
+    fn rewrite_form_method_get_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let mut rewriter = HtmlRewrite::new(Rc::new(
+            url::Url::parse("https://www.example.com/").unwrap(),
+        ));
+
+        rewriter
+            .write(b"<form method=\"get\" action=\"/a\"></form>")
+            .unwrap();
+
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
+            "<form method=\"POST\" action=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Fa&mortyhash=d2269853e1eda4c3f07592ef3742218dfa63c210d29f0fe3ea16f460efa164e8\" target=\"_self\">\
+            <input type=\"hidden\" name=\"_searproxy_origin_method\" value=\"get\"></form>"
+        );
+    }
+
+    #[test]
+    fn rewrite_form_method_post_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let mut rewriter = HtmlRewrite::new(Rc::new(
+            url::Url::parse("https://www.example.com/").unwrap(),
+        ));
+
+        rewriter
+            .write(b"<form method=\"Post\" action=\"/a\"></form>")
+            .unwrap();
+
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
+            "<form method=\"POST\" action=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Fa&mortyhash=d2269853e1eda4c3f07592ef3742218dfa63c210d29f0fe3ea16f460efa164e8\" target=\"_self\">\
+            <input type=\"hidden\" name=\"_searproxy_origin_method\" value=\"Post\"></form>"
+        );
+    }
+
+    #[test]
+    fn rewrite_form_no_method_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let mut rewriter = HtmlRewrite::new(Rc::new(
+            url::Url::parse("https://www.example.com/").unwrap(),
+        ));
+
+        rewriter.write(b"<form action=\"/a\"></form>").unwrap();
+
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
+            "<form action=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Fa&mortyhash=d2269853e1eda4c3f07592ef3742218dfa63c210d29f0fe3ea16f460efa164e8\" target=\"_self\" method=\"POST\"></form>"
+        );
+    }
+
+    #[test]
+    fn rewrite_form_no_action_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let mut rewriter = HtmlRewrite::new(Rc::new(
+            url::Url::parse("https://www.example.com/").unwrap(),
+        ));
+
+        rewriter.write(b"<form></form>").unwrap();
+
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
+            "<form target=\"_self\" method=\"POST\"></form>"
         );
     }
 }
