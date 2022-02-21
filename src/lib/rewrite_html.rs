@@ -2,8 +2,7 @@ use std::{cell::RefCell, collections::HashSet, rc::Rc};
 
 use lol_html::html_content::{Element, EndTag, TextChunk};
 
-use crate::lib::rewrite_css::CssRewrite;
-use crate::lib::rewrite_url::rewrite_url;
+use crate::lib::{rewrite_css::CssRewrite, rewrite_url::rewrite_url};
 
 type CssRewriteRef = Rc<RefCell<Option<CssRewrite>>>;
 type StyleHashList = Rc<RefCell<Vec<String>>>;
@@ -19,9 +18,29 @@ pub struct HtmlRewriteResult {
     pub style_hashes: Vec<String>,
 }
 
+const ALLOWED_LINK_REL_VALUES: [&str; 11] = [
+    "alternate",
+    "copyright",
+    "first",
+    "help",
+    "icon",
+    "last",
+    "license",
+    "prev",
+    "shortcut icon",
+    "stylesheet",
+    "up",
+];
+
+const ALLOWED_META_EQUIV_VALUES: [&str; 3] = ["content-type", "refresh", "x-ua-compatible"];
+
 static IMG_SRCSET_REGEX: once_cell::sync::Lazy<regex::Regex> = once_cell::sync::Lazy::new(|| {
     regex::Regex::new(r"(?P<url>[\w#!:.?+=&%@!\-/]+)(\s+(?:[0-9]+\.)?[0-9]+[xw]\s*[,$]?|$)")
         .expect("RegExp compilation failed")
+});
+
+static META_EQUIV_REFRESH: once_cell::sync::Lazy<regex::Regex> = once_cell::sync::Lazy::new(|| {
+    regex::Regex::new(r"/[0-9]+;\s*url=(?P<url>[^$]+)/i").expect("RegExp compilation failed")
 });
 
 static ALLOWED_ATTRIBUTES: once_cell::sync::Lazy<HashSet<&'static str>> =
@@ -29,6 +48,7 @@ static ALLOWED_ATTRIBUTES: once_cell::sync::Lazy<HashSet<&'static str>> =
         HashSet::from([
             "abbr",
             "accesskey",
+            "action",
             "align",
             "alt",
             "as",
@@ -38,7 +58,6 @@ static ALLOWED_ATTRIBUTES: once_cell::sync::Lazy<HashSet<&'static str>> =
             "class",
             "content",
             "contenteditable",
-            "contextmenu",
             "csp",
             "dir",
             "disabled",
@@ -88,14 +107,16 @@ impl<'html> HtmlRewrite<'html> {
                         lol_html::element!("applet", Self::remove_element),
                         lol_html::element!("canvas", Self::remove_element),
                         lol_html::element!("embed", Self::remove_element),
+                        lol_html::element!("link", Self::filter_link_elements),
                         lol_html::element!("math", Self::remove_element),
+                        lol_html::element!("meta", Self::filter_meta_elements(url.clone())),
                         lol_html::element!("script", Self::remove_element),
                         lol_html::element!("svg", Self::remove_element),
                         lol_html::element!("*", Self::remove_disallowed_attributes),
                         lol_html::element!("*[href]", Self::transform_href(url.clone())),
                         lol_html::element!("*[src]", Self::transform_src(url.clone())),
                         lol_html::element!("img[srcset]", Self::transform_srcset(url.clone())),
-                        lol_html::element!("form", Self::transform_form),
+                        lol_html::element!("form", Self::transform_form(url.clone())),
                         lol_html::element!(
                             "style",
                             Self::transform_style(
@@ -237,14 +258,89 @@ impl<'html> HtmlRewrite<'html> {
     }
 
     fn transform_form(
+        base_url: Rc<url::Url>,
+    ) -> impl Fn(&mut Element) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        move |element: &mut Element| {
+            use std::str::FromStr;
+
+            element.set_attribute("target", "_self")?;
+
+            if let Some(method) = element.get_attribute("method") {
+                element.prepend(
+                    format!(
+                        "<input type='hidden' name='_searproxy_origin_method' value='{}'>",
+                        actix_web::http::Method::from_str(&method)?
+                    )
+                    .as_str(),
+                    lol_html::html_content::ContentType::Html,
+                );
+            }
+
+            element.set_attribute("method", "POST")?;
+
+            if let Some(action) = element.get_attribute("action") {
+                element.set_attribute(
+                    "action",
+                    rewrite_url(base_url.as_ref(), action.trim())?.as_str(),
+                )?;
+            }
+
+            Ok(())
+        }
+    }
+
+    fn filter_link_elements(
         element: &mut Element,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        // todo: this is a temporary workaround to prevent form submissions
-        // this will lead to a 405 since POST isn't supported (yet)
-        element.set_attribute("method", "POST")?;
-        element.set_attribute("target", "_self")?;
+        if let Some(rel) = element.get_attribute("rel") {
+            if !ALLOWED_LINK_REL_VALUES.contains(&rel.to_ascii_lowercase().as_str()) {
+                element.remove()
+            }
+        } else {
+            element.remove()
+        }
 
         Ok(())
+    }
+
+    fn filter_meta_elements(
+        base_url: Rc<url::Url>,
+    ) -> impl Fn(&mut Element) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        move |element: &mut Element| {
+            if let Some(http_equiv) = element.get_attribute("http-equiv") {
+                let lc_equiv = http_equiv.to_ascii_lowercase();
+
+                if !ALLOWED_META_EQUIV_VALUES.contains(&lc_equiv.trim()) {
+                    element.remove();
+
+                    return Ok(());
+                }
+
+                if lc_equiv.trim() == "refresh" {
+                    if let Some(content) = element.get_attribute("content") {
+                        if let Some(refresh_capture) = META_EQUIV_REFRESH.captures(&content) {
+                            if let Some(url_match) = refresh_capture.name("url") {
+                                let next_url = rewrite_url(&base_url, url_match.as_str().trim())?;
+
+                                element.set_attribute(
+                                    "content",
+                                    format!("{}{}", &content[..url_match.start()], next_url)
+                                        .as_str(),
+                                )?;
+                            }
+                        }
+                    }
+                }
+            } else if let Some(charset) = element.get_attribute("charset") {
+                if charset.to_ascii_lowercase().trim() == "utf-8" {
+                    return Ok(());
+                }
+            }
+
+            element.remove();
+
+            Ok(())
+        }
     }
 
     fn append_proxy_header(

@@ -32,6 +32,8 @@ pub enum ClientError {
     HtmlRewrite(#[from] lol_html::errors::RewritingError),
     #[error("CSS rewriting failed")]
     CssRewrite(#[from] RewriteCssError),
+    #[error("Server will not process the request due to a client error")]
+    BadRequest,
 }
 
 pub enum BodyType {
@@ -39,6 +41,12 @@ pub enum BodyType {
     Stream(
         std::pin::Pin<Box<dyn futures_util::Stream<Item = Result<bytes::Bytes, reqwest::Error>>>>,
     ),
+}
+
+pub struct PostRequest {
+    pub body: std::collections::HashMap<String, String>,
+    pub method: reqwest::Method,
+    pub mime: mime::Mime,
 }
 
 pub struct ClientResponse {
@@ -49,16 +57,31 @@ pub struct ClientResponse {
 }
 
 pub async fn fetch_validate_url(
-    method: reqwest::Method,
     url: &str,
     hash: &str,
     acceptable_languages: &str,
+    request_body_opt: Option<PostRequest>,
 ) -> Result<ClientResponse, ClientError> {
+    use std::str::FromStr;
+
     let mut hmac = match crate::lib::HMAC.get() {
         Some(instance) => instance.clone(),
         None => return Err(ClientError::HmacInstance),
     };
+    let mut request_body: Option<std::collections::HashMap<String, String>> = None;
+    let mut next_url = url::Url::from_str(url)?;
+    let method = match request_body_opt {
+        Some(payload) => {
+            if payload.method == reqwest::Method::POST {
+                request_body = Some(payload.body);
+            } else {
+                append_form_params(&mut next_url, payload.body);
+            }
 
+            payload.method
+        }
+        None => reqwest::Method::GET,
+    };
     let hash_bytes = hex::decode(hash)?;
     let computed_hash = {
         hmac.update(url.as_bytes());
@@ -66,8 +89,8 @@ pub async fn fetch_validate_url(
     };
 
     if hash_bytes == computed_hash {
-        log::debug!("{} '{}'", method, url);
-        return fetch_transform_url(method, url, acceptable_languages).await;
+        log::debug!("{} '{}'", method, next_url.as_str());
+        return fetch_transform_url(method, next_url, acceptable_languages, request_body).await;
     }
 
     if log::log_enabled!(log::Level::Info) {
@@ -84,27 +107,39 @@ pub async fn fetch_validate_url(
 
 async fn fetch_transform_url(
     method: reqwest::Method,
-    url: &str,
+    url: url::Url,
     acceptable_languages: &str,
+    request_body: Option<std::collections::HashMap<String, String>>,
 ) -> Result<ClientResponse, ClientError> {
     let request_client = match crate::lib::REQUEST_CLIENT.get() {
         Some(client) => client,
         None => return Err(ClientError::RequestClient),
     };
-
-    let response = request_client
-        .request(method.clone(), url)
+    let mut request = request_client
+        .request(method, url)
         .header(reqwest::header::ACCEPT, "*/*")
-        .header(reqwest::header::ACCEPT_LANGUAGE, acceptable_languages)
-        .send()
-        .await?;
-    let status_code = response.status().as_u16();
+        .header(reqwest::header::ACCEPT_LANGUAGE, acceptable_languages);
 
-    if status_code == 200 {
+    if let Some(payload) = request_body {
+        request = request.form(&payload);
+    }
+
+    let response = request.send().await?;
+    let status_code = response.status();
+
+    if status_code == reqwest::StatusCode::OK {
         return transform_response(response).await;
     }
 
-    Err(ClientError::UnexpectedStatusCode(status_code))
+    Err(ClientError::UnexpectedStatusCode(status_code.as_u16()))
+}
+
+fn append_form_params(url: &mut url::Url, params: std::collections::HashMap<String, String>) {
+    let mut query_pairs = url.query_pairs_mut();
+
+    for pair in params.iter() {
+        query_pairs.append_pair(pair.0, pair.1);
+    }
 }
 
 async fn transform_response(response: reqwest::Response) -> Result<ClientResponse, ClientError> {

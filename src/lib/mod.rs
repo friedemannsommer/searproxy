@@ -1,4 +1,4 @@
-pub use client::{fetch_validate_url, BodyType, ClientError};
+pub use client::{fetch_validate_url, BodyType, ClientError, PostRequest};
 #[cfg(test)]
 pub use shared::test_setup_hmac;
 pub use shared::{

@@ -46,7 +46,8 @@ pub async fn start_http_service() {
                 crate::assets::HEADER_STYLESHEET,
                 "text/css"
             ))
-            .service(routes::handle_index)
+            .service(routes::index::handle_get_request)
+            .service(routes::index::handle_post_request)
     })
     .backlog(4096)
     .shutdown_timeout(5);
