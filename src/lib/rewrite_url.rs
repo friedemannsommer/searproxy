@@ -6,18 +6,23 @@ pub enum RewriteUrlError {
     UrlParse(#[from] url::ParseError),
     #[error("Serialization failed")]
     Serialize(#[from] serde_qs::Error),
+    #[error("Failed to create UTF-8 string")]
+    Utf8String(#[from] std::string::FromUtf8Error),
 }
 
-pub fn rewrite_url(base_url: &url::Url, url: &str) -> Result<String, RewriteUrlError> {
+pub fn rewrite_url<'url>(
+    base_url: &url::Url,
+    url: &'url str,
+) -> Result<std::borrow::Cow<'url, str>, RewriteUrlError> {
     if url.starts_with("data:") {
         return if url.starts_with("data:image/") {
-            Ok(String::from(url))
+            Ok(std::borrow::Cow::Borrowed(url))
         } else {
-            Ok(String::new())
+            Ok(std::borrow::Cow::Borrowed(""))
         };
     } else if url.starts_with('#') {
         // since a fragment is client side, there is no need to rewrite this
-        return Ok(String::from(url));
+        return Ok(std::borrow::Cow::Borrowed(url));
     }
 
     let mut hmac = match crate::lib::HMAC.get() {
@@ -25,10 +30,9 @@ pub fn rewrite_url(base_url: &url::Url, url: &str) -> Result<String, RewriteUrlE
         None => return Err(RewriteUrlError::HmacInstance),
     };
     let mut next_base_url = base_url.join(url)?;
-    // `./?` (3) + `mortyurl` (8) + `mortyhash` (9) + "hash" (64) + `next_base_url.len()` (* 2 [for url encoding])
-    let mut result = String::with_capacity(3 + 8 + 9 + 64 + (next_base_url.as_str().len() * 2));
+    // `./?` (3) + `mortyurl` (8) + `mortyhash` (9) + "hash" (64) + `next_base_url.len()` (* 2 [url encoding])
+    let mut result = Vec::with_capacity(3 + 8 + 9 + 64 + (next_base_url.as_str().len() * 2));
     let next_url_fragment: Option<String> = next_base_url.fragment().map(String::from);
-    let _capacity = result.capacity();
 
     if next_url_fragment.is_some() {
         // exclude fragment from request URL
@@ -38,21 +42,22 @@ pub fn rewrite_url(base_url: &url::Url, url: &str) -> Result<String, RewriteUrlE
     let next_url = next_base_url.to_string();
 
     hmac.update(next_url.as_bytes());
-    result.push_str("./?");
-    result.push_str(
-        serde_qs::to_string(&crate::model::IndexHttpArgs {
+    result.extend_from_slice("./?".as_bytes());
+
+    serde_qs::to_writer(
+        &crate::model::IndexHttpArgs {
             hash: Some(hex::encode(&hmac.finalize())),
             url: Some(next_url),
-        })?
-        .as_str(),
-    );
+        },
+        &mut result,
+    )?;
 
     if let Some(fragment) = next_url_fragment {
-        result.push('#');
-        result.push_str(fragment.as_str());
+        result.push(b'#');
+        result.extend_from_slice(fragment.as_bytes());
     }
 
-    Ok(result)
+    Ok(std::borrow::Cow::Owned(String::from_utf8(result)?))
 }
 
 #[cfg(test)]
@@ -65,8 +70,7 @@ mod tests {
 
         assert_eq!(
             rewrite_url(&url::Url::parse("https://www.example.com").unwrap(), "/index.html")
-                .unwrap()
-                .as_str(),
+                .unwrap(),
             "./?mortyurl=https%3A%2F%2Fwww.example.com%2Findex.html&mortyhash=7554946c4d3998da8be40b803c938c943f3dbbbb78958addd008b55bcacfb8c0"
         );
     }
@@ -77,8 +81,7 @@ mod tests {
 
         assert_eq!(
             rewrite_url(&url::Url::parse("https://www.example.com/home/about").unwrap(), "../index.html")
-                .unwrap()
-                .as_str(),
+                .unwrap(),
             "./?mortyurl=https%3A%2F%2Fwww.example.com%2Findex.html&mortyhash=7554946c4d3998da8be40b803c938c943f3dbbbb78958addd008b55bcacfb8c0"
         );
     }
@@ -89,8 +92,7 @@ mod tests {
 
         assert_eq!(
             rewrite_url(&url::Url::parse("https://example.com/").unwrap(), "https://www.example.com/")
-                .unwrap()
-                .as_str(),
+                .unwrap(),
             "./?mortyurl=https%3A%2F%2Fwww.example.com%2F&mortyhash=85870232cac1676c4477f7cae4da7173ccee4002f32e89c16038547aa20175c0"
         );
     }
@@ -104,8 +106,7 @@ mod tests {
                 &url::Url::parse("https://example.com/").unwrap(),
                 "data:image/png;base64,dGVzdA=="
             )
-            .unwrap()
-            .as_str(),
+            .unwrap(),
             "data:image/png;base64,dGVzdA=="
         );
     }
@@ -119,8 +120,7 @@ mod tests {
                 &url::Url::parse("https://example.com/").unwrap(),
                 "data:image/jpg;base64,dGVzdA=="
             )
-            .unwrap()
-            .as_str(),
+            .unwrap(),
             "data:image/jpg;base64,dGVzdA=="
         );
     }
@@ -135,7 +135,7 @@ mod tests {
                 "data:application/javascript;base64,dGVzdA=="
             )
             .unwrap(),
-            String::new()
+            ""
         );
     }
 
@@ -149,7 +149,7 @@ mod tests {
                 "data:text/plain;base64,dGVzdA=="
             )
             .unwrap(),
-            String::new()
+            ""
         );
     }
 

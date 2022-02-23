@@ -110,7 +110,13 @@ impl CssRewrite {
                         }
                         _ => {
                             self.output.extend_from_slice(
-                                self.rewrite_url(self.url_start, offset + index)?.as_bytes(),
+                                rewrite_url(
+                                    &self.base_url,
+                                    std::str::from_utf8(
+                                        &self.buffer[self.url_start..offset + index],
+                                    )?,
+                                )?
+                                .as_bytes(),
                             );
                             self.output.push(*byte);
                             self.match_state.next()
@@ -129,7 +135,13 @@ impl CssRewrite {
                         }
                         _ => {
                             self.output.extend_from_slice(
-                                self.rewrite_url(self.url_start, offset + index)?.as_bytes(),
+                                rewrite_url(
+                                    &self.base_url,
+                                    std::str::from_utf8(
+                                        &self.buffer[self.url_start..offset + index],
+                                    )?,
+                                )?
+                                .as_bytes(),
                             );
                             self.output.push(*byte);
                             self.match_state.next();
@@ -139,7 +151,11 @@ impl CssRewrite {
                 b')' if self.match_state.inside_brackets() => {
                     if self.match_state != MatchState::ClosingBracket {
                         self.output.extend_from_slice(
-                            self.rewrite_url(self.url_start, offset + index)?.as_bytes(),
+                            rewrite_url(
+                                &self.base_url,
+                                std::str::from_utf8(&self.buffer[self.url_start..offset + index])?,
+                            )?
+                            .as_bytes(),
                         );
                     }
 
@@ -178,13 +194,6 @@ impl CssRewrite {
         } else {
             Ok(())
         }
-    }
-
-    fn rewrite_url(&self, start: usize, end: usize) -> Result<String, RewriteCssError> {
-        Ok(rewrite_url(
-            &self.base_url,
-            std::str::from_utf8(&self.buffer[start..end])?,
-        )?)
     }
 }
 
