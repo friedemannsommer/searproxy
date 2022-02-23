@@ -286,11 +286,10 @@ impl<'html> HtmlRewrite<'html> {
             if let Some(action) = element.get_attribute("action") {
                 element.set_attribute(
                     "action",
-                    rewrite_url(
+                    &rewrite_url(
                         base_url.as_ref(),
                         Self::html_entity_decode(action.trim()).as_str(),
-                    )?
-                    .as_str(),
+                    )?,
                 )?;
             }
 
@@ -433,10 +432,11 @@ impl<'html> HtmlRewrite<'html> {
     }
 
     fn html_entity_decode(value: &str) -> String {
-        htmlentity::entity::decode(value)
-            .as_slice()
-            .iter()
-            .collect::<String>()
+        let mut result = String::with_capacity(value.len());
+
+        htmlentity::entity::decode_to(value, &mut result);
+
+        result
     }
 }
 

@@ -10,16 +10,19 @@ pub enum RewriteUrlError {
     Utf8String(#[from] std::string::FromUtf8Error),
 }
 
-pub fn rewrite_url(base_url: &url::Url, url: &str) -> Result<String, RewriteUrlError> {
+pub fn rewrite_url<'url>(
+    base_url: &url::Url,
+    url: &'url str,
+) -> Result<std::borrow::Cow<'url, str>, RewriteUrlError> {
     if url.starts_with("data:") {
         return if url.starts_with("data:image/") {
-            Ok(String::from(url))
+            Ok(std::borrow::Cow::Borrowed(url))
         } else {
-            Ok(String::new())
+            Ok(std::borrow::Cow::Borrowed(""))
         };
     } else if url.starts_with('#') {
         // since a fragment is client side, there is no need to rewrite this
-        return Ok(String::from(url));
+        return Ok(std::borrow::Cow::Borrowed(url));
     }
 
     let mut hmac = match crate::lib::HMAC.get() {
@@ -54,7 +57,7 @@ pub fn rewrite_url(base_url: &url::Url, url: &str) -> Result<String, RewriteUrlE
         result.extend_from_slice(fragment.as_bytes());
     }
 
-    Ok(String::from_utf8(result)?)
+    Ok(std::borrow::Cow::Owned(String::from_utf8(result)?))
 }
 
 #[cfg(test)]
