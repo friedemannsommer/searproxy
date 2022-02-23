@@ -1,3 +1,5 @@
+#![deny(unsafe_code)]
+
 mod assets;
 mod lib;
 mod model;
@@ -75,6 +77,7 @@ fn set_shared_values(config: model::Config<'static, 'static>) {
         panic!("Failed to set HMAC instance");
     }
 
+    let timeout = std::time::Duration::from_secs(config.request_timeout as u64);
     let mut request_client_builder = reqwest::Client::builder()
         .referer(false)
         .deflate(true)
@@ -88,12 +91,8 @@ fn set_shared_values(config: model::Config<'static, 'static>) {
         .trust_dns(true)
         .tcp_nodelay(true)
         .tcp_keepalive(None)
-        .timeout(std::time::Duration::from_secs(
-            config.request_timeout as u64,
-        ))
-        .connect_timeout(std::time::Duration::from_secs(
-            config.request_timeout as u64,
-        ))
+        .timeout(timeout)
+        .connect_timeout(timeout)
         .user_agent(
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:91.0) Gecko/20100101 Firefox/91.0",
         );

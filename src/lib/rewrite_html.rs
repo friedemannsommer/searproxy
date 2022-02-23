@@ -31,7 +31,7 @@ const ALLOWED_LINK_REL_VALUES: [&str; 7] = [
 ];
 
 static IMG_SRCSET_REGEX: once_cell::sync::Lazy<regex::Regex> = once_cell::sync::Lazy::new(|| {
-    regex::Regex::new(r"(?P<url>[\w#!:.?+=&%@!\-/]+)(\s+(?:[0-9]+\.)?[0-9]+[xw]\s*[,$]?|$)")
+    regex::Regex::new(r"(?P<url>[\w#!;:.?+=&%@!\-/]+)(\s+(?:[0-9]+\.)?[0-9]+[xw]\s*[,$]?|$)")
         .expect("RegExp compilation failed")
 });
 
@@ -156,7 +156,10 @@ impl<'html> HtmlRewrite<'html> {
         move |element| {
             element.set_attribute(
                 "src",
-                &rewrite_url(base_url.as_ref(), &element.get_attribute("src").unwrap())?,
+                &rewrite_url(
+                    base_url.as_ref(),
+                    Self::get_unchecked_attribute_value(element, "src").as_str(),
+                )?,
             )?;
 
             Ok(())
@@ -173,7 +176,8 @@ impl<'html> HtmlRewrite<'html> {
 
             for group in IMG_SRCSET_REGEX.captures_iter(&src_set_values) {
                 if let Some(matched_url) = group.name("url") {
-                    let proxy_url = rewrite_url(base_url.as_ref(), matched_url.as_str())?;
+                    let html_decoded = Self::html_entity_decode(matched_url.as_str());
+                    let proxy_url = rewrite_url(base_url.as_ref(), html_decoded.as_str())?;
 
                     output.push_str(&src_set_values[offset..matched_url.start()]);
                     output.push_str(&proxy_url);
@@ -194,7 +198,10 @@ impl<'html> HtmlRewrite<'html> {
         move |element: &mut Element| {
             element.set_attribute(
                 "href",
-                &rewrite_url(base_url.as_ref(), &element.get_attribute("href").unwrap())?,
+                &rewrite_url(
+                    base_url.as_ref(),
+                    Self::get_unchecked_attribute_value(element, "href").as_str(),
+                )?,
             )?;
 
             Ok(())
@@ -279,7 +286,11 @@ impl<'html> HtmlRewrite<'html> {
             if let Some(action) = element.get_attribute("action") {
                 element.set_attribute(
                     "action",
-                    rewrite_url(base_url.as_ref(), action.trim())?.as_str(),
+                    rewrite_url(
+                        base_url.as_ref(),
+                        Self::html_entity_decode(action.trim()).as_str(),
+                    )?
+                    .as_str(),
                 )?;
             }
 
@@ -317,12 +328,17 @@ impl<'html> HtmlRewrite<'html> {
                     if let Some(content) = element.get_attribute("content") {
                         if let Some(refresh_capture) = META_EQUIV_REFRESH.captures(&content) {
                             if let Some(url_match) = refresh_capture.name("url") {
-                                let next_url = rewrite_url(&base_url, url_match.as_str().trim())?;
+                                let html_decoded =
+                                    Self::html_entity_decode(url_match.as_str().trim());
 
                                 element.set_attribute(
                                     "content",
-                                    format!("{}{}", &content[..url_match.start()], next_url)
-                                        .as_str(),
+                                    format!(
+                                        "{}{}",
+                                        &content[..url_match.start()],
+                                        rewrite_url(&base_url, html_decoded.as_str())?
+                                    )
+                                    .as_str(),
                                 )?;
 
                                 return Ok(());
@@ -411,6 +427,17 @@ impl<'html> HtmlRewrite<'html> {
 
         Ok(())
     }
+
+    fn get_unchecked_attribute_value(element: &Element, name: &str) -> String {
+        Self::html_entity_decode(element.get_attribute(name).unwrap().as_str())
+    }
+
+    fn html_entity_decode(value: &str) -> String {
+        htmlentity::entity::decode(value)
+            .as_slice()
+            .iter()
+            .collect::<String>()
+    }
 }
 
 #[cfg(test)]
@@ -437,6 +464,25 @@ mod tests {
     }
 
     #[test]
+    fn rewrite_a_href_relative_html_entity_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let mut rewriter = HtmlRewrite::new(Rc::new(
+            url::Url::parse("https://www.example.com/index.html").unwrap(),
+        ));
+
+        rewriter
+            .write(b"<a href='/?a=b&amp;c=d'>example</a>")
+            .unwrap();
+
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
+            "<a href=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2F%3Fa%3Db%26c%3Dd\
+            &mortyhash=b0162773021eaca309a695af2dfed9240bb7f2686ac6efe62fc802fa6e833889\">example</a>"
+        );
+    }
+
+    #[test]
     fn rewrite_img_src_relative_n_1() {
         crate::lib::test_setup_hmac();
 
@@ -450,6 +496,23 @@ mod tests {
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
             "<img src=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Flogo.png\
         &mortyhash=2aa2717d139a63b3f3fc43fa862c8a73fc7814f1140b5279fc2758bc9d8cc1f9\">"
+        );
+    }
+
+    #[test]
+    fn rewrite_img_src_relative_html_entity_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let mut rewriter = HtmlRewrite::new(Rc::new(
+            url::Url::parse("https://www.example.com/").unwrap(),
+        ));
+
+        rewriter.write(b"<img src='/logo&comma;png'>").unwrap();
+
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
+            "<img src=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Flogo%2Cpng\
+            &mortyhash=09f005c2152e803e8f29b43dd6431773f97c2ec9412a484ac3f9dc7c1697c877\">"
         );
     }
 
@@ -469,6 +532,25 @@ mod tests {
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
             "<iframe src=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Ftest.html\
         &mortyhash=48b7184730b6c78c9b4231f70560f92bdc09188ab27871d9489a372b3b47a9e1\"></iframe>"
+        );
+    }
+
+    #[test]
+    fn rewrite_iframe_src_relative_html_entity_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let mut rewriter = HtmlRewrite::new(Rc::new(
+            url::Url::parse("https://www.example.com/").unwrap(),
+        ));
+
+        rewriter
+            .write(b"<iframe src='/test&comma;html'></iframe>")
+            .unwrap();
+
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
+            "<iframe src=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Ftest%2Chtml\
+            &mortyhash=6e211a524206716e0d77aaae300aa5b697609ead62908172833c267a68d5a6ee\"></iframe>"
         );
     }
 
@@ -502,6 +584,27 @@ mod tests {
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
             "<img srcset=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Fheader640.png&mortyhash=bf2aa9174435adfc3616a7bbb7f34e42cc7935e34feb23e0f6001b3acf2ceee0 640w, \
             ./?mortyurl=https%3A%2F%2Fwww.example.com%2Fheader960.png&mortyhash=197fbfa4294a326f377651d2297f8ed5bf45018210e8615c7ee5dd7fad7037ec 960w, ./?mortyurl=https%3A%2F%2Fwww.example.com%2Fheader1024.png&mortyhash=d056d2f2316e7d9a1be4f34d7b430af80a610a87dc7616ae6d8d3d27cd84aef1 1024w, ./?mortyurl=https%3A%2F%2Fwww.example.com%2Fheader.png&mortyhash=890ee860e875afc9c56d972f1f44d64b55d93aeaf73a7f24e1cd43fc5806a414\">"
+        );
+    }
+
+    #[test]
+    fn rewrite_img_srcset_html_entity_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let mut rewriter = HtmlRewrite::new(Rc::new(
+            url::Url::parse("https://www.example.com/").unwrap(),
+        ));
+
+        rewriter
+            .write(b"<img srcset='header640&comma;png 640w, header&amp;png'>")
+            .unwrap();
+
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
+            "<img srcset=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Fheader640%2Cpng\
+            &mortyhash=1d8c952a54f1680f0735c2f7e5129e0d7c5e721e4e96375db8c939f432db0b92 640w, \
+            ./?mortyurl=https%3A%2F%2Fwww.example.com%2Fheader%26png&mortyhash=\
+            da2a4431c30590e5fc1f0697677e62abe82327417228df6fe689af036c9828a5\">"
         );
     }
 
@@ -725,7 +828,27 @@ mod tests {
 
         assert_eq!(
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
-            "<link rel=\"icon\" href=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Ffavicon.ico&mortyhash=fc10bed0a5b7786553e4f658be6029176875e29fe645f32251c0b7427b4f057d\">"
+            "<link rel=\"icon\" href=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Ffavicon.ico&\
+            mortyhash=fc10bed0a5b7786553e4f658be6029176875e29fe645f32251c0b7427b4f057d\">"
+        );
+    }
+
+    #[test]
+    fn rewrite_link_icon_html_entity_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let mut rewriter = HtmlRewrite::new(Rc::new(
+            url::Url::parse("https://www.example.com/").unwrap(),
+        ));
+
+        rewriter
+            .write(b"<link rel=\"icon\" href=\"favicon&comma;ico\">")
+            .unwrap();
+
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
+            "<link rel=\"icon\" href=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Ffavicon%2Cico&\
+            mortyhash=7d143d57f49c3f4d096dbd79f17530a1fa2783373db3fb0dadf19bccdd4b4dd2\">"
         );
     }
 
