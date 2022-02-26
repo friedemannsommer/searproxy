@@ -22,3 +22,6 @@ accepted = ["BSD-3-Clause"]
 
 [alloc-stdlib]
 accepted = ["BSD-3-Clause"]
+
+[subtle]
+accepted = ["BSD-3-Clause"]
