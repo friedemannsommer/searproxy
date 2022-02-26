@@ -61,6 +61,7 @@ pub async fn fetch_validate_url(
     acceptable_languages: &str,
     request_body_opt: Option<FormRequest>,
 ) -> Result<ClientResponse, ClientError> {
+    use hmac::Mac;
     use std::str::FromStr;
 
     let mut hmac = match crate::lib::HMAC.get() {
@@ -82,22 +83,19 @@ pub async fn fetch_validate_url(
         None => reqwest::Method::GET,
     };
     let hash_bytes = hex::decode(hash)?;
-    let computed_hash = {
-        hmac.update(url.as_bytes());
-        hmac.finalize()
-    };
 
-    if hash_bytes == computed_hash {
+    hmac.update(url.as_bytes());
+
+    if hmac.verify_slice(&hash_bytes).is_ok() {
         log::debug!("{} '{}'", method, next_url.as_str());
         return fetch_transform_url(method, next_url, acceptable_languages, request_body).await;
     }
 
     if log::log_enabled!(log::Level::Info) {
         log::info!(
-            "rejecting request for: '{}' (invalid hash: {} != {})",
+            "rejecting request for: '{}' (invalid hash: {})",
             url,
-            hex::encode(hash_bytes),
-            hex::encode(computed_hash)
+            hex::encode(hash_bytes)
         );
     }
 

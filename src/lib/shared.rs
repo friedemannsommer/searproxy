@@ -1,4 +1,5 @@
-pub static HMAC: once_cell::sync::OnceCell<hmac_sha256::HMAC> = once_cell::sync::OnceCell::new();
+pub static HMAC: once_cell::sync::OnceCell<hmac::Hmac<sha2::Sha256>> =
+    once_cell::sync::OnceCell::new();
 pub static REQUEST_CLIENT: once_cell::sync::OnceCell<reqwest::Client> =
     once_cell::sync::OnceCell::new();
 pub static GLOBAL_CONFIG: once_cell::sync::OnceCell<crate::model::Config> =
@@ -12,7 +13,12 @@ pub static HEADER_VALUE_CONTENT_HTML: once_cell::sync::Lazy<actix_web::http::hea
 
 #[cfg(test)]
 pub fn test_setup_hmac() {
-    if HMAC.set(hmac_sha256::HMAC::new(b"example")).is_err() {
+    use hmac::digest::KeyInit;
+
+    if HMAC
+        .set(hmac::Hmac::new_from_slice(b"example").unwrap())
+        .is_err()
+    {
         // silently ignore this, since it only `Err`s on successive calls
     }
 }

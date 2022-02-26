@@ -24,10 +24,14 @@ the OpenSSL Toolkit. <https://www.openssl.org/>";
 pub struct Cli {
     /// Allow "Location" response header following.
     #[clap(short, long, env = "SEARPROXY_FOLLOW_REDIRECTS")]
-    pub follow_redirect: bool,
+    pub follow_redirects: bool,
     /// Base64 encoded string to use as HMAC 256 secret.
     #[clap(short = 's', long, env = "SEARPROXY_HMAC_SECRET")]
     pub hmac_secret: String,
+    /// Enable IMG element rewriting with "lazy" loading.
+    /// Since this can be used to measure the clients scroll position, it's disabled by default.
+    #[clap(long, env = "SEARPROXY_LAZY_IMAGES")]
+    pub lazy_images: bool,
     /// <IPv4 / IPv6>:port or socket to listen on.
     #[clap(short, long, env = "SEARPROXY_LISTEN")]
     pub listen: String,
@@ -47,6 +51,9 @@ pub struct Cli {
         default_value_t = 5
     )]
     pub request_timeout: u8,
+    /// Worker thread count for handling incoming HTTP requests.
+    #[clap(short = 'w', long, env = "SEARPROXY_WORKER_COUNT", default_value_t = 0)]
+    pub worker_count: u8,
 }
 
 #[cfg(test)]

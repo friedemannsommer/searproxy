@@ -6,7 +6,7 @@ use crate::{
 #[actix_web::get("/")]
 pub async fn handle_get_request(
     query: actix_web::web::Query<crate::model::IndexHttpArgs>,
-    http_request: actix_web::web::HttpRequest,
+    http_request: actix_web::HttpRequest,
 ) -> actix_web::HttpResponse {
     let response = get_base_response();
 
@@ -25,7 +25,7 @@ pub async fn handle_get_request(
 #[actix_web::post("/")]
 pub async fn handle_post_request(
     query: actix_web::web::Query<crate::model::IndexHttpArgs>,
-    http_request: actix_web::web::HttpRequest,
+    http_request: actix_web::HttpRequest,
     mut body: actix_web::web::Form<std::collections::HashMap<String, String>>,
 ) -> actix_web::HttpResponse {
     let response = get_base_response();

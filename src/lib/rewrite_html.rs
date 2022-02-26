@@ -31,8 +31,10 @@ const ALLOWED_LINK_REL_VALUES: [&str; 7] = [
 ];
 
 static IMG_SRCSET_REGEX: once_cell::sync::Lazy<regex::Regex> = once_cell::sync::Lazy::new(|| {
-    regex::Regex::new(r"(?P<url>[\w#!;:.?+=&%@!\-/]+)(\s+(?:[0-9]+\.)?[0-9]+[xw]\s*[,$]?|$)")
-        .expect("RegExp compilation failed")
+    regex::Regex::new(
+        r"(?P<url>[\w#!;:.?~+=*&%@!(')$/\-\[\]]+)(?:\s+(?:[0-9]+\.)?[0-9]+[xw]\s*(?:[0-9]+h)?\s*,?|$)",
+    )
+    .expect("RegExp compilation failed")
 });
 
 static META_EQUIV_REFRESH: once_cell::sync::Lazy<regex::Regex> = once_cell::sync::Lazy::new(|| {
@@ -77,6 +79,7 @@ static ALLOWED_ATTRIBUTES: once_cell::sync::Lazy<HashSet<&'static str>> =
             "rel",
             "sandbox",
             "scrolling",
+            "sizes",
             "spellcheck",
             "src",
             "srcset",
@@ -101,31 +104,34 @@ impl<'html> HtmlRewrite<'html> {
             rewriter: lol_html::HtmlRewriter::new(
                 lol_html::Settings {
                     element_content_handlers: vec![
+                        lol_html::element!("*", Self::remove_disallowed_attributes),
+                        lol_html::element!("*[href]", Self::transform_href(url.clone())),
+                        lol_html::element!("*[src]", Self::transform_src(url.clone())),
                         lol_html::element!("applet", Self::remove_element),
                         lol_html::element!("base", Self::remove_element),
+                        lol_html::element!("body", Self::append_proxy_header(url.clone())),
                         lol_html::element!("canvas", Self::remove_element),
                         lol_html::element!("embed", Self::remove_element),
+                        lol_html::element!("form", Self::transform_form(url.clone())),
+                        lol_html::element!("head", Self::append_proxy_styles),
+                        lol_html::element!(
+                            "img",
+                            Self::transform_img(match crate::lib::shared::GLOBAL_CONFIG.get() {
+                                Some(config) => config.lazy_images,
+                                _ => false,
+                            })
+                        ),
+                        lol_html::element!("img[srcset]", Self::transform_srcset(url.clone())),
                         lol_html::element!("link", Self::filter_link_elements),
                         lol_html::element!("math", Self::remove_element),
                         lol_html::element!("meta", Self::filter_meta_elements(url.clone())),
                         lol_html::element!("script", Self::remove_element),
-                        lol_html::element!("svg", Self::remove_element),
-                        lol_html::element!("*", Self::remove_disallowed_attributes),
-                        lol_html::element!("*[href]", Self::transform_href(url.clone())),
-                        lol_html::element!("*[src]", Self::transform_src(url.clone())),
-                        lol_html::element!("img[srcset]", Self::transform_srcset(url.clone())),
-                        lol_html::element!("form", Self::transform_form(url.clone())),
                         lol_html::element!(
                             "style",
-                            Self::transform_style(
-                                url.clone(),
-                                css_rewriter.clone(),
-                                style_hashes.clone()
-                            )
+                            Self::transform_style(url, css_rewriter.clone(), style_hashes.clone())
                         ),
+                        lol_html::element!("svg", Self::remove_element),
                         lol_html::text!("style", Self::write_style(css_rewriter)),
-                        lol_html::element!("body", Self::append_proxy_header(url)),
-                        lol_html::element!("head", Self::append_proxy_styles),
                     ],
                     ..lol_html::Settings::default()
                 },
@@ -161,6 +167,22 @@ impl<'html> HtmlRewrite<'html> {
                     Self::get_unchecked_attribute_value(element, "src").as_str(),
                 )?,
             )?;
+
+            Ok(())
+        }
+    }
+
+    fn transform_img(
+        allow_lazy: bool,
+    ) -> impl Fn(&mut Element) -> Result<(), Box<dyn std::error::Error + Send + Sync>> + 'html {
+        move |element: &mut Element| {
+            if allow_lazy {
+                element.set_attribute("loading", "lazy")?;
+            } else {
+                element.remove_attribute("loading");
+            }
+
+            element.set_attribute("decoding", "async")?;
 
             Ok(())
         }
@@ -235,12 +257,19 @@ impl<'html> HtmlRewrite<'html> {
 
             style_hashes.borrow_mut().push(format!(
                 "'sha256-{}'",
-                base64::encode(hmac_sha256::Hash::hash(css_bytes.as_slice()))
+                base64::encode({
+                    use sha2::Digest;
+
+                    let mut hasher = sha2::Sha256::new();
+
+                    hasher.update(css_bytes.as_slice());
+                    hasher.finalize()
+                })
             ));
 
             end.before(
                 std::str::from_utf8(&css_bytes)?,
-                lol_html::html_content::ContentType::Text,
+                lol_html::html_content::ContentType::Html,
             );
 
             Ok(())
@@ -495,7 +524,8 @@ mod tests {
         assert_eq!(
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
             "<img src=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Flogo.png\
-        &mortyhash=2aa2717d139a63b3f3fc43fa862c8a73fc7814f1140b5279fc2758bc9d8cc1f9\">"
+            &mortyhash=2aa2717d139a63b3f3fc43fa862c8a73fc7814f1140b5279fc2758bc9d8cc1f9\" \
+            decoding=\"async\">"
         );
     }
 
@@ -512,7 +542,8 @@ mod tests {
         assert_eq!(
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
             "<img src=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Flogo%2Cpng\
-            &mortyhash=09f005c2152e803e8f29b43dd6431773f97c2ec9412a484ac3f9dc7c1697c877\">"
+            &mortyhash=09f005c2152e803e8f29b43dd6431773f97c2ec9412a484ac3f9dc7c1697c877\" \
+            decoding=\"async\">"
         );
     }
 
@@ -531,7 +562,7 @@ mod tests {
         assert_eq!(
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
             "<iframe src=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Ftest.html\
-        &mortyhash=48b7184730b6c78c9b4231f70560f92bdc09188ab27871d9489a372b3b47a9e1\"></iframe>"
+            &mortyhash=48b7184730b6c78c9b4231f70560f92bdc09188ab27871d9489a372b3b47a9e1\"></iframe>"
         );
     }
 
@@ -566,7 +597,7 @@ mod tests {
 
         assert_eq!(
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
-            "<img class='image'>"
+            "<img class='image' decoding=\"async\">"
         );
     }
 
@@ -583,7 +614,10 @@ mod tests {
         assert_eq!(
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
             "<img srcset=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Fheader640.png&mortyhash=bf2aa9174435adfc3616a7bbb7f34e42cc7935e34feb23e0f6001b3acf2ceee0 640w, \
-            ./?mortyurl=https%3A%2F%2Fwww.example.com%2Fheader960.png&mortyhash=197fbfa4294a326f377651d2297f8ed5bf45018210e8615c7ee5dd7fad7037ec 960w, ./?mortyurl=https%3A%2F%2Fwww.example.com%2Fheader1024.png&mortyhash=d056d2f2316e7d9a1be4f34d7b430af80a610a87dc7616ae6d8d3d27cd84aef1 1024w, ./?mortyurl=https%3A%2F%2Fwww.example.com%2Fheader.png&mortyhash=890ee860e875afc9c56d972f1f44d64b55d93aeaf73a7f24e1cd43fc5806a414\">"
+            ./?mortyurl=https%3A%2F%2Fwww.example.com%2Fheader960.png&mortyhash=197fbfa4294a326f377651d2297f8ed5bf45018210e8615c7ee5dd7fad7037ec 960w, \
+            ./?mortyurl=https%3A%2F%2Fwww.example.com%2Fheader1024.png&mortyhash=d056d2f2316e7d9a1be4f34d7b430af80a610a87dc7616ae6d8d3d27cd84aef1 1024w, \
+            ./?mortyurl=https%3A%2F%2Fwww.example.com%2Fheader.png&mortyhash=890ee860e875afc9c56d972f1f44d64b55d93aeaf73a7f24e1cd43fc5806a414\" \
+            decoding=\"async\">"
         );
     }
 
@@ -604,7 +638,7 @@ mod tests {
             "<img srcset=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Fheader640%2Cpng\
             &mortyhash=1d8c952a54f1680f0735c2f7e5129e0d7c5e721e4e96375db8c939f432db0b92 640w, \
             ./?mortyurl=https%3A%2F%2Fwww.example.com%2Fheader%26png&mortyhash=\
-            da2a4431c30590e5fc1f0697677e62abe82327417228df6fe689af036c9828a5\">"
+            da2a4431c30590e5fc1f0697677e62abe82327417228df6fe689af036c9828a5\" decoding=\"async\">"
         );
     }
 
@@ -788,7 +822,7 @@ mod tests {
 
         assert_eq!(
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
-            "<head><style>body{background-image:url('./?mortyurl=https%3A%2F%2Fwww.example.com%2Fmain.css&amp;mortyhash=7d40cd69599262cfe009ac148491a37e9ec47dcf2386c2807bc2255fff6d5fa3')}</style>\
+            "<head><style>body{background-image:url('./?mortyurl=https%3A%2F%2Fwww.example.com%2Fmain.css&mortyhash=7d40cd69599262cfe009ac148491a37e9ec47dcf2386c2807bc2255fff6d5fa3')}</style>\
             <link rel=\"stylesheet\" href=\"./header.css\"></head>"
         );
     }
@@ -807,9 +841,9 @@ mod tests {
 
         assert_eq!(
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
-            "<head><style>url('./?mortyurl=https%3A%2F%2Fwww.example.com%2Fmain.css&amp;mortyhash=7d40cd69599262cfe009ac148491a37e9ec47dcf2386c2807bc2255fff6d5fa3')</style>\
-            <style>url('./?mortyurl=https%3A%2F%2Fwww.example.com%2Findex.css&amp;mortyhash=de26b17e7788f85987457601375a920242dee16379bd17769fe6b6fbcb90cfcf')</style>\
-            <style>url('./?mortyurl=https%3A%2F%2Fwww.example.com%2Ftheme.css&amp;mortyhash=ddc8ae45cdbef1f3ddfc778ba578b36666f3b2541de07d5efbc1a2584a3e913c')</style>\
+            "<head><style>url('./?mortyurl=https%3A%2F%2Fwww.example.com%2Fmain.css&mortyhash=7d40cd69599262cfe009ac148491a37e9ec47dcf2386c2807bc2255fff6d5fa3')</style>\
+            <style>url('./?mortyurl=https%3A%2F%2Fwww.example.com%2Findex.css&mortyhash=de26b17e7788f85987457601375a920242dee16379bd17769fe6b6fbcb90cfcf')</style>\
+            <style>url('./?mortyurl=https%3A%2F%2Fwww.example.com%2Ftheme.css&mortyhash=ddc8ae45cdbef1f3ddfc778ba578b36666f3b2541de07d5efbc1a2584a3e913c')</style>\
             <link rel=\"stylesheet\" href=\"./header.css\"></head>"
         );
     }
