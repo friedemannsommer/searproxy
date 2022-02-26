@@ -14,8 +14,11 @@ pub async fn start_http_service() {
             .wrap(actix_web::middleware::NormalizePath::new(
                 actix_web::middleware::TrailingSlash::Trim,
             ))
-            .wrap(actix_web::middleware::Logger::new("%a '%r' %s %T"))
             .wrap(get_default_headers_middleware())
+            .wrap(actix_web::middleware::Condition::new(
+                log::log_enabled!(log::Level::Info),
+                actix_web::middleware::Logger::new("%a '%r' %s %T"),
+            ))
             .service(crate::static_asset_route!(
                 "/favicon.ico",
                 crate::assets::FAVICON_ICO_FILE,
