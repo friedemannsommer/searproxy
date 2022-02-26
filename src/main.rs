@@ -21,14 +21,16 @@ fn get_config() -> model::Config<'static, 'static> {
     let args: model::Cli = model::Cli::parse();
 
     model::Config {
-        follow_redirect: args.follow_redirect,
+        follow_redirects: args.follow_redirects,
         hmac_secret: std::borrow::Cow::Owned(
             base64::decode(&args.hmac_secret).expect("HMAC secret couldn't be [base64] decoded"),
         ),
+        lazy_images: args.lazy_images,
         listen: parse_socket_listener(&args.listen),
         log_level: args.log_level,
         request_timeout: args.request_timeout,
         proxy_address: args.proxy_address.map(std::borrow::Cow::Owned),
+        worker_count: args.worker_count,
     }
 }
 
@@ -70,8 +72,10 @@ fn init_logging(config: &model::Config) {
 }
 
 fn set_shared_values(config: model::Config<'static, 'static>) {
+    use hmac::digest::KeyInit;
+
     if lib::HMAC
-        .set(hmac_sha256::HMAC::new(config.hmac_secret.as_ref()))
+        .set(hmac::Hmac::new_from_slice(config.hmac_secret.as_ref()).expect("Invalid HMAC secret"))
         .is_err()
     {
         panic!("Failed to set HMAC instance");
@@ -83,7 +87,7 @@ fn set_shared_values(config: model::Config<'static, 'static>) {
         .deflate(true)
         .gzip(true)
         .brotli(true)
-        .redirect(if config.follow_redirect {
+        .redirect(if config.follow_redirects {
             reqwest::redirect::Policy::limited(15)
         } else {
             reqwest::redirect::Policy::none()

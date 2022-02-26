@@ -8,14 +8,17 @@ pub async fn start_http_service() {
     let config = crate::lib::GLOBAL_CONFIG
         .get()
         .expect("Global config is not initialized");
-    let http_server = actix_web::HttpServer::new(move || {
+    let mut http_server = actix_web::HttpServer::new(move || {
         actix_web::App::new()
             .wrap(actix_web::middleware::Compress::default())
             .wrap(actix_web::middleware::NormalizePath::new(
                 actix_web::middleware::TrailingSlash::Trim,
             ))
-            .wrap(actix_web::middleware::Logger::new("%a '%r' %s %T"))
             .wrap(get_default_headers_middleware())
+            .wrap(actix_web::middleware::Condition::new(
+                log::log_enabled!(log::Level::Info),
+                actix_web::middleware::Logger::new("%a '%r' %s %T"),
+            ))
             .service(crate::static_asset_route!(
                 "/favicon.ico",
                 crate::assets::FAVICON_ICO_FILE,
@@ -51,6 +54,10 @@ pub async fn start_http_service() {
     })
     .backlog(4096)
     .shutdown_timeout(5);
+
+    if config.worker_count != 0 {
+        http_server = http_server.workers(config.worker_count as usize);
+    }
 
     match match &config.listen {
         crate::model::SocketListener::Tcp(address) => http_server.bind(address),

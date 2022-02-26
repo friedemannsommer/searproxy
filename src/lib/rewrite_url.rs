@@ -14,6 +14,8 @@ pub fn rewrite_url<'url>(
     base_url: &url::Url,
     url: &'url str,
 ) -> Result<std::borrow::Cow<'url, str>, RewriteUrlError> {
+    use hmac::Mac;
+
     if url.starts_with("data:") {
         return if url.starts_with("data:image/") {
             Ok(std::borrow::Cow::Borrowed(url))
@@ -30,8 +32,8 @@ pub fn rewrite_url<'url>(
         None => return Err(RewriteUrlError::HmacInstance),
     };
     let mut next_base_url = base_url.join(url)?;
-    // `./?` (3) + `mortyurl` (8) + `mortyhash` (9) + "hash" (64) + `next_base_url.len()` (* 2 [url encoding])
-    let mut result = Vec::with_capacity(3 + 8 + 9 + 64 + (next_base_url.as_str().len() * 2));
+    // `./` (2) + `?mortyurl=` (10) + `&mortyhash=` (11) + "hash" (64) + `next_base_url.len()` (* 2 [url encoding])
+    let mut result = Vec::with_capacity(2 + 10 + 11 + 64 + (next_base_url.as_str().len() * 2));
     let next_url_fragment: Option<String> = next_base_url.fragment().map(String::from);
 
     if next_url_fragment.is_some() {
@@ -46,7 +48,7 @@ pub fn rewrite_url<'url>(
 
     serde_qs::to_writer(
         &crate::model::IndexHttpArgs {
-            hash: Some(hex::encode(&hmac.finalize())),
+            hash: Some(hex::encode(hmac.finalize().into_bytes())),
             url: Some(next_url),
         },
         &mut result,
