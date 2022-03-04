@@ -1,10 +1,13 @@
 use actix_web::http::header::HeaderValue;
 
+use crate::assets::{HEADER_STYLESHEET_HASH, MAIN_STYLESHEET_HASH};
+
 pub fn get_content_security_policy(style_hashes_opt: Option<Vec<String>>) -> HeaderValue {
-    let style_src_hashes = if let Some(style_hashes) = style_hashes_opt {
+    let style_src_hashes = if let Some(mut style_hashes) = style_hashes_opt {
+        style_hashes.push(String::from(HEADER_STYLESHEET_HASH));
         style_hashes.join(" ")
     } else {
-        String::new()
+        String::from(MAIN_STYLESHEET_HASH)
     };
 
     HeaderValue::from_str(

@@ -1,3 +1,8 @@
+pub use ExternalLinkTemplate as ExternalLink;
+pub use Layout as Base;
+
+use crate::assets::MAIN_STYLESHEET;
+
 markup::define! {
     Layout<Header: markup::Render, Content: markup::Render>(
         header: Header,
@@ -13,7 +18,7 @@ markup::define! {
                 link["rel" = "icon", "type" = "image/png", "sizes" = "32x32", "href" = "./favicon-32x32.png"];
                 link["rel" = "icon", "type" = "image/png", "sizes" = "16x16", "href" = "./favicon-16x16.png"];
                 link["rel" = "icon", "type" = "image/ico", "sizes" = "16x16", "href" = "./favicon.ico"];
-                link["rel" = "stylesheet", "href" = "./main.css"];
+                style { @markup::raw(MAIN_STYLESHEET) }
             }
             body {
                 header {
@@ -22,9 +27,7 @@ markup::define! {
                     }
                     @header
                 }
-                main {
-                    @content
-                }
+                main { @content }
                 footer {
                     p {
                         @blank_ref("https://github.com/friedemannsommer/searproxy", "Source code")
@@ -58,6 +61,3 @@ pub fn blank_ref<Content: markup::Render>(
 ) -> ExternalLinkTemplate<Content> {
     ExternalLinkTemplate { url, content }
 }
-
-pub use ExternalLinkTemplate as ExternalLink;
-pub use Layout as Base;

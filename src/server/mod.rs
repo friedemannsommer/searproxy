@@ -39,16 +39,6 @@ pub async fn start_http_service() {
                 crate::assets::ROBOTS_FILE,
                 "text/plain"
             ))
-            .service(crate::static_asset_route!(
-                "/main.css",
-                crate::assets::MAIN_STYLESHEET,
-                "text/css"
-            ))
-            .service(crate::static_asset_route!(
-                "/header.css",
-                crate::assets::HEADER_STYLESHEET,
-                "text/css"
-            ))
             .service(routes::index::handle_get_request)
             .service(routes::index::handle_post_request)
     })
