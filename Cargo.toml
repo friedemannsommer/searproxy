@@ -43,3 +43,12 @@ features = ["brotli", "socks", "gzip", "deflate", "stream", "rustls-tls", "trust
 version = "=0.10.2"
 default-features = false
 features = ["asm", "std"]
+
+[build-dependencies]
+base64 = "=0.13.0"
+parcel_css = "=1.0.0-alpha.18"
+
+[build-dependencies.sha2]
+version = "=0.10.2"
+default-features = false
+features = ["std"]
