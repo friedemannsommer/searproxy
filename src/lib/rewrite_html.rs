@@ -2,7 +2,10 @@ use std::{cell::RefCell, collections::HashSet, rc::Rc};
 
 use lol_html::html_content::{Element, EndTag, TextChunk};
 
-use crate::lib::{rewrite_css::CssRewrite, rewrite_url::rewrite_url};
+use crate::{
+    assets::HEADER_STYLESHEET,
+    lib::{rewrite_css::CssRewrite, rewrite_url::rewrite_url},
+};
 
 type CssRewriteRef = Rc<RefCell<Option<CssRewrite>>>;
 type StyleHashList = Rc<RefCell<Vec<String>>>;
@@ -41,6 +44,9 @@ static META_EQUIV_REFRESH: once_cell::sync::Lazy<regex::Regex> = once_cell::sync
     regex::Regex::new(r"(?i)[0-9]+\s*;\s*url\s*=\s*(?P<url>[^$]+)")
         .expect("RegExp compilation failed")
 });
+
+static HEADER_STYLE_ELEMENT: once_cell::sync::Lazy<String> =
+    once_cell::sync::Lazy::new(|| format!("<style>{}</style>", HEADER_STYLESHEET));
 
 static ALLOWED_ATTRIBUTES: once_cell::sync::Lazy<HashSet<&'static str>> =
     once_cell::sync::Lazy::new(|| {
@@ -122,6 +128,7 @@ impl<'html> HtmlRewrite<'html> {
                             })
                         ),
                         lol_html::element!("img[srcset]", Self::transform_srcset(url.clone())),
+                        lol_html::element!("source[srcset]", Self::transform_srcset(url.clone())),
                         lol_html::element!("link", Self::filter_link_elements),
                         lol_html::element!("math", Self::remove_element),
                         lol_html::element!("meta", Self::filter_meta_elements(url.clone())),
@@ -404,7 +411,7 @@ impl<'html> HtmlRewrite<'html> {
         element: &mut Element,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         element.append(
-            "<link rel=\"stylesheet\" href=\"./header.css\">",
+            &HEADER_STYLE_ELEMENT,
             lol_html::html_content::ContentType::Html,
         );
 
@@ -473,7 +480,7 @@ impl<'html> HtmlRewrite<'html> {
 mod tests {
     use std::rc::Rc;
 
-    use crate::lib::rewrite_html::HtmlRewrite;
+    use crate::lib::rewrite_html::{HtmlRewrite, HEADER_STYLE_ELEMENT};
 
     #[test]
     fn rewrite_a_href_relative_n_1() {
@@ -786,7 +793,10 @@ mod tests {
 
         assert_eq!(
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
-            "<head><title>Test</title><link rel=\"stylesheet\" href=\"./header.css\"></head>"
+            format!(
+                "<head><title>Test</title>{}</head>",
+                HEADER_STYLE_ELEMENT.as_str()
+            )
         );
     }
 
@@ -804,7 +814,10 @@ mod tests {
 
         assert_eq!(
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
-            "<head><style>a{color:red}</style><link rel=\"stylesheet\" href=\"./header.css\"></head>"
+            format!(
+                "<head><style>a{{color:red}}</style>{}</head>",
+                HEADER_STYLE_ELEMENT.as_str()
+            )
         );
     }
 
@@ -822,8 +835,9 @@ mod tests {
 
         assert_eq!(
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
-            "<head><style>body{background-image:url('./?mortyurl=https%3A%2F%2Fwww.example.com%2Fmain.css&mortyhash=7d40cd69599262cfe009ac148491a37e9ec47dcf2386c2807bc2255fff6d5fa3')}</style>\
-            <link rel=\"stylesheet\" href=\"./header.css\"></head>"
+            format!("<head><style>\
+            body{{background-image:url('./?mortyurl=https%3A%2F%2Fwww.example.com%2Fmain.css&mortyhash=7d40cd69599262cfe009ac148491a37e9ec47dcf2386c2807bc2255fff6d5fa3')}}\
+            </style>{}</head>",HEADER_STYLE_ELEMENT.as_str())
         );
     }
 
@@ -841,10 +855,10 @@ mod tests {
 
         assert_eq!(
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
-            "<head><style>url('./?mortyurl=https%3A%2F%2Fwww.example.com%2Fmain.css&mortyhash=7d40cd69599262cfe009ac148491a37e9ec47dcf2386c2807bc2255fff6d5fa3')</style>\
+            format!("<head><style>url('./?mortyurl=https%3A%2F%2Fwww.example.com%2Fmain.css&mortyhash=7d40cd69599262cfe009ac148491a37e9ec47dcf2386c2807bc2255fff6d5fa3')</style>\
             <style>url('./?mortyurl=https%3A%2F%2Fwww.example.com%2Findex.css&mortyhash=de26b17e7788f85987457601375a920242dee16379bd17769fe6b6fbcb90cfcf')</style>\
             <style>url('./?mortyurl=https%3A%2F%2Fwww.example.com%2Ftheme.css&mortyhash=ddc8ae45cdbef1f3ddfc778ba578b36666f3b2541de07d5efbc1a2584a3e913c')</style>\
-            <link rel=\"stylesheet\" href=\"./header.css\"></head>"
+            {}</head>",HEADER_STYLE_ELEMENT.as_str())
         );
     }
 
@@ -1113,6 +1127,114 @@ mod tests {
         assert_eq!(
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
             "<form target=\"_self\" method=\"POST\"></form>"
+        );
+    }
+
+    #[test]
+    fn rewrite_valid_width_img_srcset_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let mut rewriter = HtmlRewrite::new(Rc::new(
+            url::Url::parse("https://www.example.com/").unwrap(),
+        ));
+
+        rewriter
+            .write(b"<img srcset=\"https://ex.amp.le 1w\">")
+            .unwrap();
+
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
+            "<img srcset=\"./?mortyurl=https%3A%2F%2Fex.amp.le%2F&mortyhash=35e41e2ec2517a437522f9c921536eb6650c63fd8e9e34d8c5a001494c17481b 1w\" decoding=\"async\">"
+        );
+    }
+
+    #[test]
+    fn rewrite_valid_width_source_srcset_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let mut rewriter = HtmlRewrite::new(Rc::new(
+            url::Url::parse("https://www.example.com/").unwrap(),
+        ));
+
+        rewriter
+            .write(b"<source srcset=\"https://ex.amp.le 1w\">")
+            .unwrap();
+
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
+            "<source srcset=\"./?mortyurl=https%3A%2F%2Fex.amp.le%2F&mortyhash=35e41e2ec2517a437522f9c921536eb6650c63fd8e9e34d8c5a001494c17481b 1w\">"
+        );
+    }
+
+    #[test]
+    fn rewrite_valid_density_img_srcset_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let mut rewriter = HtmlRewrite::new(Rc::new(
+            url::Url::parse("https://www.example.com/").unwrap(),
+        ));
+
+        rewriter
+            .write(b"<img srcset=\"https://ex.amp.le 1x\">")
+            .unwrap();
+
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
+            "<img srcset=\"./?mortyurl=https%3A%2F%2Fex.amp.le%2F&mortyhash=35e41e2ec2517a437522f9c921536eb6650c63fd8e9e34d8c5a001494c17481b 1x\" decoding=\"async\">"
+        );
+    }
+
+    #[test]
+    fn rewrite_valid_density_source_srcset_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let mut rewriter = HtmlRewrite::new(Rc::new(
+            url::Url::parse("https://www.example.com/").unwrap(),
+        ));
+
+        rewriter
+            .write(b"<source srcset=\"https://ex.amp.le 1x\">")
+            .unwrap();
+
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
+            "<source srcset=\"./?mortyurl=https%3A%2F%2Fex.amp.le%2F&mortyhash=35e41e2ec2517a437522f9c921536eb6650c63fd8e9e34d8c5a001494c17481b 1x\">"
+        );
+    }
+
+    #[test]
+    fn rewrite_invalid_img_srcset_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let mut rewriter = HtmlRewrite::new(Rc::new(
+            url::Url::parse("https://www.example.com/").unwrap(),
+        ));
+
+        rewriter
+            .write(b"<img srcset=\"https://ex.amp.le 1w 2h\">")
+            .unwrap();
+
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
+            "<img srcset=\"./?mortyurl=https%3A%2F%2Fex.amp.le%2F&mortyhash=35e41e2ec2517a437522f9c921536eb6650c63fd8e9e34d8c5a001494c17481b 1w 2h\" decoding=\"async\">"
+        );
+    }
+
+    #[test]
+    fn rewrite_invalid_source_srcset_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let mut rewriter = HtmlRewrite::new(Rc::new(
+            url::Url::parse("https://www.example.com/").unwrap(),
+        ));
+
+        rewriter
+            .write(b"<source srcset=\"https://ex.amp.le 1w 2h\">")
+            .unwrap();
+
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
+            "<source srcset=\"./?mortyurl=https%3A%2F%2Fex.amp.le%2F&mortyhash=35e41e2ec2517a437522f9c921536eb6650c63fd8e9e34d8c5a001494c17481b 1w 2h\">"
         );
     }
 }
