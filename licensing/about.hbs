@@ -4,79 +4,182 @@
 <head>
     <meta charset="UTF-8">
     <title>SearProxy open source licenses</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-        @media (prefers-color-scheme: dark) {
-            body {
-                background: #333;
-                color: white;
-            }
-
-            a {
-                color: skyblue;
-            }
-        }
-
-        .container {
-            font-family: sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-        }
-
-        .intro {
-            text-align: center;
-        }
-
-        .licenses-list {
-            list-style-type: none;
+        * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
         }
 
-        .license-used-by {
-            margin-top: -10px;
+        html, body {
+            height: auto;
+            min-height: 100%;
+            width: 100%;
         }
 
-        .license-text {
-            max-height: 200px;
-            overflow-y: scroll;
+        body {
+            font-family: "Open Sans", "Garamond", "Georgia", sans-serif;
+            font-size: 1em;
+            font-weight: normal;
+            line-height: 1.5em;
+            margin: 0;
+            padding: 0 5px;
+        }
+
+        a {
+            color: #0105ff;
+            text-decoration: underline;
+        }
+
+        a:hover {
+            background-color: #0105ff;
+            color: #fff;
+            text-decoration: none;
+        }
+
+        h1, h2, h3, h4 {
+            font-weight: bold;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            font-size: 2em;
+            line-height: 2.5em;
+        }
+
+        h2 {
+            font-size: 1.75em;
+            line-height: 2.25em;
+        }
+
+        h3 {
+            font-size: 1.5em;
+            line-height: 2em;
+        }
+
+        h4 {
+            font-size: 1.25em;
+            line-height: 1.75em;
+            margin: 0 0 10px 0;
+        }
+
+        header {
+            text-align: center;
+        }
+
+        ul {
+            list-style-type: disc;
+            margin: 0;
+            padding: 0 0 0 1em;
+        }
+
+        nav > ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        pre {
+            max-height: calc(26 * 1em);
+            max-width: calc(50 * 1em);
+            overflow-y: auto;
             white-space: pre-wrap;
+        }
+
+        main, nav > ul {
+            -ms-flex-align: start;
+            -ms-flex-direction: row;
+            -ms-flex-line-pack: start;
+            -ms-flex-pack: distribute;
+            -ms-flex-wrap: wrap;
+            -webkit-align-content: flex-start;
+            -webkit-align-items: flex-start;
+            -webkit-flex-direction: row;
+            -webkit-flex-wrap: wrap;
+            -webkit-justify-content: space-around;
+            align-content: flex-start;
+            align-items: flex-start;
+            display: -ms-flexbox;
+            display: -webkit-flex;
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            justify-content: space-around;
+        }
+
+        main, nav > ul > li {
+            -ms-flex-item-align: auto;
+            -ms-flex: 0 1 auto;
+            -webkit-align-self: auto;
+            -webkit-flex: 0 1 auto;
+            align-self: auto;
+            flex: 0 1 auto;
+        }
+
+        main {
+            align-items: center;
+            display: grid;
+            gap: 1em;
+            grid-auto-flow: dense;
+            grid-template-columns: repeat(auto-fill, minmax(calc(50 * 1em), 1fr));
+            justify-items: center;
+        }
+
+        section > ul {
+            max-height: calc(12 * 1em);
+            overflow-y: auto;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: #121212;
+                color: #bebebe;
+            }
+
+            a {
+                color: #08ff00;
+                text-decoration: underline;
+            }
+
+            a:hover {
+                background-color: #08ff00;
+                color: #000;
+                text-decoration: none;
+            }
         }
     </style>
 </head>
 
 <body>
-<main class="container">
-    <div class="intro">
-        <h1>Open source licenses</h1>
-        <p>This page lists the licenses of the projects used in SearProxy.</p>
-    </div>
-
-    <h2>Overview of licenses:</h2>
-    <ul class="licenses-overview">
+<header>
+    <h1>Open source licenses</h1>
+    <p>This page lists the licenses of the projects used in SearProxy.</p>
+</header>
+<nav>
+    <ul>
         {{#each overview}}
             <li><a href="#{{id}}">{{name}}</a> ({{count}})</li>
         {{/each}}
     </ul>
-
-    <h2>All license text:</h2>
-    <ul class="licenses-list">
-        {{#each licenses}}
-            <li class="license">
-                <h3 id="{{id}}">{{name}}</h3>
-                <h4>Used by:</h4>
-                <ul class="license-used-by">
-                    {{#each used_by}}
-                        <li>
-                            <a href="https://crates.io/crates/{{crate.name}}" target="_blank" rel="noopener noreferrer">
-                                {{crate.name}} {{crate.version}}
-                            </a>
-                        </li>
-                    {{/each}}
-                </ul>
-                <pre class="license-text">{{text}}</pre>
-            </li>
-        {{/each}}
-    </ul>
+</nav>
+<main>
+    {{#each licenses}}
+        <section>
+            <h3 id="{{id}}">{{name}}</h3>
+            <h4>Used by:</h4>
+            <ul>
+                {{#each used_by}}
+                    <li>
+                        <a href="https://crates.io/crates/{{crate.name}}" target="_blank" rel="noopener noreferrer">
+                            {{crate.name}} {{crate.version}}
+                        </a>
+                    </li>
+                {{/each}}
+            </ul>
+            <pre>{{text}}</pre>
+        </section>
+    {{/each}}
 </main>
 </body>
 
