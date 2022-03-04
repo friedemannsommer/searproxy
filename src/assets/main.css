@@ -1,10 +1,29 @@
 /*! normalize.css v8.0.1 | MIT License | github.com/necolas/normalize.css */
 html {
-    line-height: 1.15;
     -webkit-text-size-adjust: 100%;
+    height: 100%;
+    line-height: 1.15;
 }
 
 body {
+    -ms-flex-align: center;
+    -ms-flex-direction: column;
+    -ms-flex-line-pack: center;
+    -ms-flex-pack: justify;
+    -ms-flex-wrap: nowrap;
+    -webkit-align-content: center;
+    -webkit-align-items: center;
+    -webkit-flex-direction: column;
+    -webkit-flex-wrap: nowrap;
+    -webkit-justify-content: space-between;
+    align-content: center;
+    align-items: center;
+    display: -ms-flexbox;
+    display: -webkit-flex;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    justify-content: space-between;
     background: #fff;
     color: #121212;
     font-family: "Open Sans", "Garamond", "Georgia", sans-serif;
@@ -12,8 +31,18 @@ body {
     font-weight: 400;
     line-height: 1.5em;
     margin: 0;
-    padding: 0;
+    min-height: 100%;
+    padding: 0 5px;
     text-align: center;
+}
+
+body > * {
+    -ms-flex-item-align: auto;
+    -ms-flex: 0 1 auto;
+    -webkit-align-self: auto;
+    -webkit-flex: 0 1 auto;
+    align-self: auto;
+    flex: 0 1 auto;
 }
 
 main {
@@ -38,6 +67,10 @@ pre {
 
 a {
     background-color: transparent;
+}
+
+p {
+    margin: 0.5em 0;
 }
 
 abbr[title] {
