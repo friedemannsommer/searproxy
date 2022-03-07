@@ -32,7 +32,7 @@ jobs:
     name: Generate third party license overview
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
       - name: Install latest stable
