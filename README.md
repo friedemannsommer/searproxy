@@ -1,6 +1,6 @@
 # SearProxy
 
-A SearX[NG] compatible web content sanitizer proxy
+A [SearX][1]/[SearXNG][2] compatible web content sanitizer proxy
 
 > This implementation is heavily inspired by [Morty](https://github.com/asciimoo/morty).
 
@@ -43,3 +43,6 @@ here: [friedemannsommer.github.io/searproxy/licenses.html](https://friedemannsom
 
 This product includes software developed by the OpenSSL Project for use in the OpenSSL
 Toolkit. ([www.openssl.org](https://www.openssl.org/))
+
+[1]: https://github.com/searx/searx
+[2]: https://github.com/searxng/searxng
