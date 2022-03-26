@@ -188,7 +188,7 @@ jobs:
             if [[ $target == "arm-unknown-linux-musleabihf" ]]; then
               # rename "arm" to "armv6" to explicitly state ARM version
               mv "$TARGET_FILE" "./release-binaries/searproxy_armv6-unknown-linux-musleabihf"
-            elif [[ TARGET_FILE == *.exe ]]; then
+            elif [[ $target == "x86_64-pc-windows-gnu" ]]; then
               mv "$TARGET_FILE" "./release-binaries/searproxy_$target.exe"
             else
               mv "$TARGET_FILE" "./release-binaries/searproxy_$target"
