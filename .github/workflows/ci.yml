@@ -130,9 +130,9 @@ jobs:
           # Linux
           - "x86_64-unknown-linux-musl"
           - "i686-unknown-linux-musl"
-          # Windows (fix: linker `mingw gcc` not found)
-          # - "i686-pc-windows-gnu"
-          # - "x86_64-pc-windows-gnu"
+          # Windows
+          # - "i686-pc-windows-gnu" (fix: linker `mingw gcc` not found)
+          - "x86_64-pc-windows-gnu"
     steps:
       - uses: actions/checkout@v3
       - name: Install latest stable
@@ -174,7 +174,7 @@ jobs:
         run: |
           TARGETS=('aarch64-unknown-linux-musl' 'arm-unknown-linux-musleabihf' \
             'armv7-unknown-linux-musleabihf' 'x86_64-unknown-linux-musl' \
-            'i686-unknown-linux-musl'\
+            'i686-unknown-linux-musl' 'x86_64-pc-windows-gnu' \
           )
           mkdir release-binaries
           for target in "${TARGETS[@]}"; do

@@ -3,6 +3,7 @@ use std::borrow::Cow;
 #[derive(Debug)]
 pub enum SocketListener {
     Tcp(std::net::SocketAddr),
+    #[cfg(unix)]
     Unix(std::path::PathBuf),
 }
 

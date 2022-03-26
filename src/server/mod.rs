@@ -51,6 +51,7 @@ pub async fn start_http_service() {
 
     match match &config.listen {
         crate::model::SocketListener::Tcp(address) => http_server.bind(address),
+        #[cfg(unix)]
         crate::model::SocketListener::Unix(path) => http_server.bind_uds(path),
     } {
         Ok(server_socket) => {
