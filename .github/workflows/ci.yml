@@ -123,8 +123,16 @@ jobs:
     strategy:
       matrix:
         target:
+          # ARM
           - "aarch64-unknown-linux-musl"
+          - "arm-unknown-linux-musleabihf"
+          - "armv7-unknown-linux-musleabihf"
+          # Linux
           - "x86_64-unknown-linux-musl"
+          - "i686-unknown-linux-musl"
+          # Windows
+          - "i686-pc-windows-gnu"
+          - "x86_64-pc-windows-gnu"
     steps:
       - uses: actions/checkout@v3
       - name: Install latest stable
@@ -164,7 +172,10 @@ jobs:
           path: artifact-binaries
       - name: Rename files
         run: |
-          TARGETS=('aarch64-unknown-linux-musl' 'x86_64-unknown-linux-musl')
+          TARGETS=('aarch64-unknown-linux-musl' 'arm-unknown-linux-musleabihf' \
+            'armv7-unknown-linux-musleabihf' 'x86_64-unknown-linux-musl' \
+            'i686-unknown-linux-musl' 'i686-pc-windows-gnu' 'x86_64-pc-windows-gnu'\
+          )
           mkdir release-binaries
           for target in "${TARGETS[@]}"; do
             mv "${{steps.download.outputs.download-path}}/SearProxy_$target/searproxy" "./release-binaries/searproxy_$target"
