@@ -122,17 +122,19 @@ jobs:
       - clippy
     strategy:
       matrix:
-        target:
-          # ARM
-          - "aarch64-unknown-linux-musl"
-          - "arm-unknown-linux-musleabihf"
-          - "armv7-unknown-linux-musleabihf"
-          # Linux
-          - "x86_64-unknown-linux-musl"
-          - "i686-unknown-linux-musl"
-          # Windows
-          # - "i686-pc-windows-gnu" (fix: linker `mingw gcc` not found)
-          - "x86_64-pc-windows-gnu"
+        include:
+          - target: "aarch64-unknown-linux-musl"
+            binary: "searproxy"
+          - target: "arm-unknown-linux-musleabihf"
+            binary: "searproxy"
+          - target: "armv7-unknown-linux-musleabihf"
+            binary: "searproxy"
+          - target: "x86_64-unknown-linux-musl"
+            binary: "searproxy"
+          - target: "i686-unknown-linux-musl"
+            binary: "searproxy"
+          - target: "x86_64-pc-windows-gnu"
+            binary: "searproxy.exe"
     steps:
       - uses: actions/checkout@v3
       - name: Install latest stable
@@ -154,8 +156,9 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: "SearProxy_${{ matrix.target }}"
-          path: "target/${{ matrix.target }}/release/searproxy"
+          path: "target/${{ matrix.target }}/release/${{ matrix.binary }}"
           retention-days: 1
+          if-no-files-found: error
 
   release:
     name: "Create release"
@@ -172,13 +175,24 @@ jobs:
           path: artifact-binaries
       - name: Rename files
         run: |
-          TARGETS=('aarch64-unknown-linux-musl' 'arm-unknown-linux-musleabihf' \
+          TARGETS=( \
+            'aarch64-unknown-linux-musl' 'arm-unknown-linux-musleabihf' \
             'armv7-unknown-linux-musleabihf' 'x86_64-unknown-linux-musl' \
             'i686-unknown-linux-musl' 'x86_64-pc-windows-gnu' \
           )
           mkdir release-binaries
           for target in "${TARGETS[@]}"; do
-            mv "${{steps.download.outputs.download-path}}/SearProxy_$target/searproxy" "./release-binaries/searproxy_$target"
+            TARGET_PATH="${{steps.download.outputs.download-path}}/SearProxy_$target/"
+            TARGET_FILE=$(find "$TARGET_PATH" -maxdepth 1 -name "searproxy*" -type f)
+  
+            if [[ $target == "arm-unknown-linux-musleabihf" ]]; then
+              # rename "arm" to "armv6" to explicitly state ARM version
+              mv "$TARGET_FILE" "./release-binaries/searproxy_armv6-unknown-linux-musleabihf"
+            elif [[ TARGET_FILE == *.exe ]]; then
+              mv "$TARGET_FILE" "./release-binaries/searproxy_$target.exe"
+            else
+              mv "$TARGET_FILE" "./release-binaries/searproxy_$target"
+            fi
           done
       - name: Create release
         uses: "softprops/action-gh-release@v1"
