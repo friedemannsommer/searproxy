@@ -26,7 +26,7 @@ enum MatchState {
 }
 
 pub struct CssRewrite {
-    base_url: Rc<url::Url>,
+    base_url: Rc<Url>,
     buffer: Vec<u8>,
     last_index: usize,
     match_start: usize,

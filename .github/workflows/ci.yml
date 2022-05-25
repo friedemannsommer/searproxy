@@ -11,7 +11,8 @@ on:
       - "Cargo.toml"
       - ".github/workflows/ci.yml"
   pull_request:
-    branches: "*"
+    branches:
+      - "*"
     paths:
       - "src/**"
       - "Cargo.toml"
@@ -184,7 +185,7 @@ jobs:
           for target in "${TARGETS[@]}"; do
             TARGET_PATH="${{steps.download.outputs.download-path}}/SearProxy_$target/"
             TARGET_FILE=$(find "$TARGET_PATH" -maxdepth 1 -name "searproxy*" -type f)
-  
+          
             if [[ $target == "arm-unknown-linux-musleabihf" ]]; then
               # rename "arm" to "armv6" to explicitly state ARM version
               mv "$TARGET_FILE" "./release-binaries/searproxy_armv6-unknown-linux-musleabihf"

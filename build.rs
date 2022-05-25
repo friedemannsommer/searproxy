@@ -19,7 +19,7 @@ fn main() {
                     filename,
                     file_contents.as_str(),
                     ParserOptions {
-                        css_modules: false,
+                        css_modules: None,
                         custom_media: false,
                         nesting: true,
                         source_index: 0,
