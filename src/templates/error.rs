@@ -1,7 +1,7 @@
 use crate::templates::base::{blank_ref, Base};
 
 pub fn error<'error_detail>(
-    error_detail_opt: &'error_detail std::option::Option<crate::server::lib::ErrorMessage<'_, '_>>,
+    error_detail_opt: &'error_detail Option<crate::server::lib::ErrorMessage<'_, '_>>,
 ) -> Base<
     impl std::fmt::Display + markup::Render,
     impl std::fmt::Display + markup::Render + 'error_detail,
