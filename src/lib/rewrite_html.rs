@@ -9,6 +9,7 @@ use crate::{
 
 type CssRewriteRef = Rc<RefCell<Option<CssRewrite>>>;
 type StyleHashList = Rc<RefCell<Vec<String>>>;
+type NoScriptBuffer = Rc<RefCell<String>>;
 
 pub struct HtmlRewrite<'html> {
     output: Rc<RefCell<Vec<u8>>>,
@@ -104,6 +105,7 @@ impl<'html> HtmlRewrite<'html> {
         let output = Rc::new(RefCell::new(Vec::<u8>::new()));
         let css_rewriter: CssRewriteRef = Rc::new(RefCell::new(None));
         let style_hashes: StyleHashList = Rc::new(RefCell::new(Vec::<String>::new()));
+        let noscript_buf: NoScriptBuffer = Rc::new(RefCell::new(String::new()));
 
         Self {
             output: output.clone(),
@@ -132,12 +134,21 @@ impl<'html> HtmlRewrite<'html> {
                         lol_html::element!("link", Self::filter_link_elements),
                         lol_html::element!("math", Self::remove_element),
                         lol_html::element!("meta", Self::filter_meta_elements(url.clone())),
+                        lol_html::element!(
+                            "noscript",
+                            Self::transform_noscript(
+                                url.clone(),
+                                noscript_buf.clone(),
+                                style_hashes.clone()
+                            )
+                        ),
                         lol_html::element!("script", Self::remove_element),
                         lol_html::element!(
                             "style",
                             Self::transform_style(url, css_rewriter.clone(), style_hashes.clone())
                         ),
                         lol_html::element!("svg", Self::remove_element),
+                        lol_html::text!("noscript", Self::write_noscript_content(noscript_buf)),
                         lol_html::text!("style", Self::write_style(css_rewriter)),
                     ],
                     ..lol_html::Settings::default()
@@ -386,6 +397,61 @@ impl<'html> HtmlRewrite<'html> {
             } else if !element.has_attribute("charset") {
                 element.remove()
             }
+
+            Ok(())
+        }
+    }
+
+    fn transform_noscript(
+        base_url: Rc<url::Url>,
+        noscript_buf: NoScriptBuffer,
+        style_hashes: StyleHashList,
+    ) -> impl Fn(&mut Element) -> Result<(), Box<dyn std::error::Error + Send + Sync>> + 'html {
+        move |element| {
+            element.on_end_tag(Self::flush_noscript_content(
+                base_url.clone(),
+                noscript_buf.clone(),
+                style_hashes.clone(),
+            ))?;
+            element.remove();
+
+            Ok(())
+        }
+    }
+
+    fn flush_noscript_content(
+        base_url: Rc<url::Url>,
+        noscript_buf: NoScriptBuffer,
+        style_hashes: StyleHashList,
+    ) -> impl Fn(&mut EndTag) -> Result<(), Box<dyn std::error::Error + Send + Sync>> + 'static
+    {
+        move |end| {
+            let mut rewriter = HtmlRewrite::new(base_url.clone());
+
+            rewriter.write(noscript_buf.take().as_bytes())?;
+
+            let result = rewriter.end()?;
+            let mut hash_list = style_hashes.borrow_mut();
+
+            for hash in result.style_hashes {
+                hash_list.push(hash);
+            }
+
+            end.after(
+                String::from_utf8(result.html)?.as_str(),
+                lol_html::html_content::ContentType::Html,
+            );
+
+            Ok(())
+        }
+    }
+
+    fn write_noscript_content(
+        noscript_buf: NoScriptBuffer,
+    ) -> impl FnMut(&mut TextChunk) -> Result<(), Box<dyn std::error::Error + Send + Sync>> + 'html
+    {
+        move |chunk| {
+            noscript_buf.borrow_mut().push_str(chunk.as_str());
 
             Ok(())
         }
@@ -1236,5 +1302,110 @@ mod tests {
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
             "<source srcset=\"./?mortyurl=https%3A%2F%2Fex.amp.le%2F&mortyhash=35e41e2ec2517a437522f9c921536eb6650c63fd8e9e34d8c5a001494c17481b 1w 2h\">"
         );
+    }
+
+    #[test]
+    fn rewrite_noscript_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let mut rewriter = HtmlRewrite::new(Rc::new(
+            url::Url::parse("https://www.example.com/").unwrap(),
+        ));
+
+        rewriter
+            .write(b"<noscript><h1>No JavaScript!</h1></noscript>")
+            .unwrap();
+
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
+            "<h1>No JavaScript!</h1>"
+        );
+    }
+
+    #[test]
+    fn rewrite_noscript_n_3() {
+        crate::lib::test_setup_hmac();
+
+        let mut rewriter = HtmlRewrite::new(Rc::new(
+            url::Url::parse("https://www.example.com/").unwrap(),
+        ));
+
+        rewriter
+            .write(b"<noscript><h1>No</h1></noscript><h2>Yes</h2><noscript><h3>Maybe</h3></noscript><h4>Definitely</h4><noscript><h5>Enough</h5></noscript>")
+            .unwrap();
+
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
+            "<h1>No</h1><h2>Yes</h2><h3>Maybe</h3><h4>Definitely</h4><h5>Enough</h5>"
+        );
+    }
+
+    #[test]
+    fn rewrite_noscript_style_n_3() {
+        crate::lib::test_setup_hmac();
+
+        let mut rewriter = HtmlRewrite::new(Rc::new(
+            url::Url::parse("https://www.example.com/").unwrap(),
+        ));
+
+        rewriter
+            .write(b"<noscript><style>a{opacity:1}</style></noscript><noscript><style>b{opacity:1}</style></noscript><noscript><style>c{opacity:1}</style></noscript>")
+            .unwrap();
+
+        let result = rewriter.end().unwrap();
+
+        assert_eq!(
+            std::str::from_utf8(result.html.as_slice()).unwrap(),
+            "<style>a{opacity:1}</style><style>b{opacity:1}</style><style>c{opacity:1}</style>"
+        );
+        assert_eq!(result.style_hashes.len(), 3);
+    }
+
+    #[test]
+    fn rewrite_head_noscript_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let mut rewriter = HtmlRewrite::new(Rc::new(
+            url::Url::parse("https://www.example.com/").unwrap(),
+        ));
+
+        rewriter
+            .write(b"<html><head><noscript><style>img{opacity:1}</style></noscript></head></html>")
+            .unwrap();
+
+        let result = rewriter.end().unwrap();
+
+        assert_eq!(
+            std::str::from_utf8(result.html.as_slice()).unwrap(),
+            format!(
+                "<html><head><style>img{{opacity:1}}</style>{}</head></html>",
+                HEADER_STYLE_ELEMENT.as_str()
+            )
+        );
+        assert_eq!(result.style_hashes.len(), 1);
+    }
+
+    #[test]
+    fn rewrite_body_noscript_n_1() {
+        crate::lib::test_setup_hmac();
+
+        let url = Rc::new(url::Url::parse("https://www.example.com/").unwrap());
+
+        let mut rewriter = HtmlRewrite::new(url.clone());
+
+        rewriter
+            .write(b"<html><body><noscript><style>img{opacity:1}</style><a href=\"https://www.example.com/\">example</a></noscript></body></html>")
+            .unwrap();
+
+        let result = rewriter.end().unwrap();
+
+        assert_eq!(
+            std::str::from_utf8(result.html.as_slice()).unwrap(),
+            format!(
+                "<html><body>{}<style>img{{opacity:1}}</style><a href=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2F&mortyhash=85870232cac1676c4477f7cae4da7173ccee4002f32e89c16038547aa20175c0\">example</a></body></html>",
+                crate::templates::render_template_string(crate::templates::Template::Header(url))
+            )
+        );
+        assert_eq!(result.style_hashes.len(), 1);
     }
 }
