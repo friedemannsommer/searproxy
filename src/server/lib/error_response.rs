@@ -58,6 +58,10 @@ fn get_error_message(error_detail: ClientError) -> Option<ErrorMessage<'static, 
             name: Cow::Borrowed("Bad request"),
             description: Cow::Owned(error_detail.to_string()),
         }),
+        ClientError::RedirectWithoutLocation => Some(ErrorMessage {
+            name: Cow::Borrowed("Invalid redirect"),
+            description: Cow::Owned(error_detail.to_string()),
+        }),
         _ => None,
     }
 }
