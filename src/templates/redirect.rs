@@ -9,7 +9,7 @@ pub fn redirect(
         header: markup::new! {
             h2 { "Server returned redirect" }
             p {
-                "Status code:"
+                "Status code: "
                 @status_code.as_str()
             }
         },
