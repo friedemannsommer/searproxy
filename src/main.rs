@@ -90,11 +90,7 @@ fn set_shared_values(config: model::Config<'static, 'static>) {
         .deflate(true)
         .gzip(true)
         .brotli(true)
-        .redirect(if config.follow_redirects {
-            reqwest::redirect::Policy::limited(15)
-        } else {
-            reqwest::redirect::Policy::none()
-        })
+        .redirect(reqwest::redirect::Policy::none())
         .trust_dns(true)
         .tcp_nodelay(true)
         .tcp_keepalive(None)

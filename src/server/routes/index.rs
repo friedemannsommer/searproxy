@@ -76,7 +76,7 @@ fn render_index(response: actix_web::HttpResponse) -> actix_web::HttpResponse {
 
     response_body.headers_mut().insert(
         actix_web::http::header::CONTENT_TYPE,
-        actix_web::http::header::HeaderValue::from_static("text/html"),
+        actix_web::http::header::HeaderValue::from_static(mime::TEXT_HTML_UTF_8.as_ref()),
     );
 
     response_body

@@ -4,6 +4,7 @@ use crate::lib::{
     rewrite_css::{CssRewrite, RewriteCssError},
     rewrite_html::HtmlRewrite,
     rewrite_html::HtmlRewriteResult,
+    rewrite_url::rewrite_url,
 };
 
 #[derive(thiserror::Error, Debug)]
@@ -28,12 +29,21 @@ pub enum ClientError {
     MimeParse(#[from] mime::FromStrError),
     #[error("UTF-8 decoding failed")]
     Utf8Decode(#[from] std::str::Utf8Error),
+    #[error("URL rewriting failed")]
+    UrlRewrite(#[from] crate::lib::rewrite_url::RewriteUrlError),
     #[error("HTML rewriting failed")]
     HtmlRewrite(#[from] lol_html::errors::RewritingError),
     #[error("CSS rewriting failed")]
     CssRewrite(#[from] RewriteCssError),
     #[error("Server will not process the request due to a client error")]
     BadRequest,
+    #[error("Server returned 3XX status code without 'Location' header")]
+    RedirectWithoutLocation,
+}
+
+pub enum FetchResult {
+    Response(ClientResponse),
+    Redirect(ClientRedirect),
 }
 
 pub enum BodyType {
@@ -55,12 +65,18 @@ pub struct ClientResponse {
     pub style_hashes: Option<Vec<String>>,
 }
 
+pub struct ClientRedirect {
+    pub external_url: String,
+    pub internal_url: String,
+    pub status_code: reqwest::StatusCode,
+}
+
 pub async fn fetch_validate_url(
     url: &str,
     hash: &str,
     acceptable_languages: &str,
     request_body_opt: Option<FormRequest>,
-) -> Result<ClientResponse, ClientError> {
+) -> Result<FetchResult, ClientError> {
     use hmac::Mac;
     use std::str::FromStr;
 
@@ -107,13 +123,13 @@ async fn fetch_transform_url(
     url: url::Url,
     acceptable_languages: &str,
     request_body: Option<std::collections::HashMap<String, String>>,
-) -> Result<ClientResponse, ClientError> {
+) -> Result<FetchResult, ClientError> {
     let request_client = match crate::lib::REQUEST_CLIENT.get() {
         Some(client) => client,
         None => return Err(ClientError::RequestClient),
     };
     let mut request = request_client
-        .request(method, url)
+        .request(method, url.clone())
         .header(reqwest::header::ACCEPT, "*/*")
         .header(reqwest::header::ACCEPT_LANGUAGE, acceptable_languages);
 
@@ -125,7 +141,21 @@ async fn fetch_transform_url(
     let status_code = response.status();
 
     if status_code == reqwest::StatusCode::OK {
-        return transform_response(response).await;
+        return Ok(FetchResult::Response(transform_response(response).await?));
+    }
+
+    if status_code.is_redirection() {
+        return if let Some(location) = response.headers().get(reqwest::header::LOCATION) {
+            let redirect_url = location.to_str()?;
+
+            Ok(FetchResult::Redirect(ClientRedirect {
+                external_url: url.join(redirect_url)?.to_string(),
+                internal_url: String::from(rewrite_url(&url, redirect_url)?),
+                status_code,
+            }))
+        } else {
+            Err(ClientError::RedirectWithoutLocation)
+        };
     }
 
     Err(ClientError::UnexpectedStatusCode(status_code.as_u16()))

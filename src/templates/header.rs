@@ -1,22 +1,18 @@
+pub use HeaderTemplate as Header;
+
+use crate::templates::base::self_ref;
+
 markup::define! {
     HeaderTemplate(url: std::rc::Rc<url::Url>) {
         div {
             h1 {
-                @SelfRef { url: "./", content: "SearProxy" }
+                @self_ref("./", "SearProxy")
             }
             p {
                 "This is a proxified and sanitized version, visit "
-                @SelfRef { url: url.as_str(), content: "original page" }
+                @self_ref(url.as_str(),  "original page")
                 "."
             }
         }
     }
-
-    SelfRef<'url, Content: markup::Render>(url: &'url str, content: Content) {
-        a["href" = url, "target" = "_self", "rel" = "noreferrer noopener"] {
-            @content
-        }
-    }
 }
-
-pub use HeaderTemplate as Header;

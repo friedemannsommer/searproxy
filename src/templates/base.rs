@@ -52,6 +52,15 @@ markup::define! {
             @content
         }
     }
+
+    InternalLinkTemplate<'url, Content:markup::Render>(
+        url: &'url str,
+        content: Content
+    ) {
+        a["href" = url, "target" = "_self", "rel" = "noreferrer noopener"] {
+            @content
+        }
+    }
 }
 
 #[inline]
@@ -60,4 +69,12 @@ pub fn blank_ref<Content: markup::Render>(
     content: Content,
 ) -> ExternalLinkTemplate<Content> {
     ExternalLinkTemplate { url, content }
+}
+
+#[inline]
+pub fn self_ref<Content: markup::Render>(
+    url: &str,
+    content: Content,
+) -> InternalLinkTemplate<Content> {
+    InternalLinkTemplate { url, content }
 }
