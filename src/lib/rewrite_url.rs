@@ -32,8 +32,8 @@ pub fn rewrite_url<'url>(
         None => return Err(RewriteUrlError::HmacInstance),
     };
     let mut next_base_url = base_url.join(url)?;
-    // `./` (2) + `?mortyurl=` (10) + `&mortyhash=` (11) + "hash" (64) + `next_base_url.len()` (* 2 [url encoding])
-    let mut result = Vec::with_capacity(2 + 10 + 11 + 64 + (next_base_url.as_str().len() * 2));
+    // `./` (2) + `?url=` (5) + `&hash=` (6) + "hash" (64) + `next_base_url.len()` (* 2 [url encoding])
+    let mut result = Vec::with_capacity(2 + 5 + 6 + 64 + (next_base_url.as_str().len() * 2));
     let next_url_fragment: Option<String> = next_base_url.fragment().map(String::from);
 
     if next_url_fragment.is_some() {
@@ -73,7 +73,7 @@ mod tests {
         assert_eq!(
             rewrite_url(&url::Url::parse("https://www.example.com").unwrap(), "/index.html")
                 .unwrap(),
-            "./?mortyurl=https%3A%2F%2Fwww.example.com%2Findex.html&mortyhash=7554946c4d3998da8be40b803c938c943f3dbbbb78958addd008b55bcacfb8c0"
+            "./?url=https%3A%2F%2Fwww.example.com%2Findex.html&hash=7554946c4d3998da8be40b803c938c943f3dbbbb78958addd008b55bcacfb8c0"
         );
     }
 
@@ -84,7 +84,7 @@ mod tests {
         assert_eq!(
             rewrite_url(&url::Url::parse("https://www.example.com/home/about").unwrap(), "../index.html")
                 .unwrap(),
-            "./?mortyurl=https%3A%2F%2Fwww.example.com%2Findex.html&mortyhash=7554946c4d3998da8be40b803c938c943f3dbbbb78958addd008b55bcacfb8c0"
+            "./?url=https%3A%2F%2Fwww.example.com%2Findex.html&hash=7554946c4d3998da8be40b803c938c943f3dbbbb78958addd008b55bcacfb8c0"
         );
     }
 
@@ -95,7 +95,7 @@ mod tests {
         assert_eq!(
             rewrite_url(&url::Url::parse("https://example.com/").unwrap(), "https://www.example.com/")
                 .unwrap(),
-            "./?mortyurl=https%3A%2F%2Fwww.example.com%2F&mortyhash=85870232cac1676c4477f7cae4da7173ccee4002f32e89c16038547aa20175c0"
+            "./?url=https%3A%2F%2Fwww.example.com%2F&hash=85870232cac1676c4477f7cae4da7173ccee4002f32e89c16038547aa20175c0"
         );
     }
 
@@ -171,7 +171,7 @@ mod tests {
 
         assert_eq!(
             rewrite_url(&url::Url::parse("https://example.com/").unwrap(), "/home/#about").unwrap(),
-            "./?mortyurl=https%3A%2F%2Fexample.com%2Fhome%2F&mortyhash=3af87c981235827014507736715a403ebd2f9c875689318184ba2cc035ea3e61#about"
+            "./?url=https%3A%2F%2Fexample.com%2Fhome%2F&hash=3af87c981235827014507736715a403ebd2f9c875689318184ba2cc035ea3e61#about"
         );
     }
 
@@ -181,7 +181,7 @@ mod tests {
 
         assert_eq!(
             rewrite_url(&url::Url::parse("https://example.com/").unwrap(), "https://another.example.com/#about").unwrap(),
-            "./?mortyurl=https%3A%2F%2Fanother.example.com%2F&mortyhash=743bb69ce433c306c9883528f2a7b451531362a1d41bbf6519ed97cdb81b907b#about"
+            "./?url=https%3A%2F%2Fanother.example.com%2F&hash=743bb69ce433c306c9883528f2a7b451531362a1d41bbf6519ed97cdb81b907b#about"
         );
     }
 }

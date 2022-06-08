@@ -560,8 +560,8 @@ mod tests {
 
         assert_eq!(
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
-            "<a href=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2F\
-        &mortyhash=85870232cac1676c4477f7cae4da7173ccee4002f32e89c16038547aa20175c0\">main</a>"
+            "<a href=\"./?url=https%3A%2F%2Fwww.example.com%2F\
+        &hash=85870232cac1676c4477f7cae4da7173ccee4002f32e89c16038547aa20175c0\">main</a>"
         );
     }
 
@@ -579,8 +579,8 @@ mod tests {
 
         assert_eq!(
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
-            "<a href=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2F%3Fa%3Db%26c%3Dd\
-            &mortyhash=b0162773021eaca309a695af2dfed9240bb7f2686ac6efe62fc802fa6e833889\">example</a>"
+            "<a href=\"./?url=https%3A%2F%2Fwww.example.com%2F%3Fa%3Db%26c%3Dd\
+            &hash=b0162773021eaca309a695af2dfed9240bb7f2686ac6efe62fc802fa6e833889\">example</a>"
         );
     }
 
@@ -596,8 +596,8 @@ mod tests {
 
         assert_eq!(
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
-            "<img src=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Flogo.png\
-            &mortyhash=2aa2717d139a63b3f3fc43fa862c8a73fc7814f1140b5279fc2758bc9d8cc1f9\" \
+            "<img src=\"./?url=https%3A%2F%2Fwww.example.com%2Flogo.png\
+            &hash=2aa2717d139a63b3f3fc43fa862c8a73fc7814f1140b5279fc2758bc9d8cc1f9\" \
             decoding=\"async\">"
         );
     }
@@ -614,8 +614,8 @@ mod tests {
 
         assert_eq!(
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
-            "<img src=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Flogo%2Cpng\
-            &mortyhash=09f005c2152e803e8f29b43dd6431773f97c2ec9412a484ac3f9dc7c1697c877\" \
+            "<img src=\"./?url=https%3A%2F%2Fwww.example.com%2Flogo%2Cpng\
+            &hash=09f005c2152e803e8f29b43dd6431773f97c2ec9412a484ac3f9dc7c1697c877\" \
             decoding=\"async\">"
         );
     }
@@ -634,8 +634,8 @@ mod tests {
 
         assert_eq!(
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
-            "<iframe src=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Ftest.html\
-            &mortyhash=48b7184730b6c78c9b4231f70560f92bdc09188ab27871d9489a372b3b47a9e1\"></iframe>"
+            "<iframe src=\"./?url=https%3A%2F%2Fwww.example.com%2Ftest.html\
+            &hash=48b7184730b6c78c9b4231f70560f92bdc09188ab27871d9489a372b3b47a9e1\"></iframe>"
         );
     }
 
@@ -653,8 +653,8 @@ mod tests {
 
         assert_eq!(
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
-            "<iframe src=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Ftest%2Chtml\
-            &mortyhash=6e211a524206716e0d77aaae300aa5b697609ead62908172833c267a68d5a6ee\"></iframe>"
+            "<iframe src=\"./?url=https%3A%2F%2Fwww.example.com%2Ftest%2Chtml\
+            &hash=6e211a524206716e0d77aaae300aa5b697609ead62908172833c267a68d5a6ee\"></iframe>"
         );
     }
 
@@ -686,10 +686,10 @@ mod tests {
 
         assert_eq!(
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
-            "<img srcset=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Fheader640.png&mortyhash=bf2aa9174435adfc3616a7bbb7f34e42cc7935e34feb23e0f6001b3acf2ceee0 640w, \
-            ./?mortyurl=https%3A%2F%2Fwww.example.com%2Fheader960.png&mortyhash=197fbfa4294a326f377651d2297f8ed5bf45018210e8615c7ee5dd7fad7037ec 960w, \
-            ./?mortyurl=https%3A%2F%2Fwww.example.com%2Fheader1024.png&mortyhash=d056d2f2316e7d9a1be4f34d7b430af80a610a87dc7616ae6d8d3d27cd84aef1 1024w, \
-            ./?mortyurl=https%3A%2F%2Fwww.example.com%2Fheader.png&mortyhash=890ee860e875afc9c56d972f1f44d64b55d93aeaf73a7f24e1cd43fc5806a414\" \
+            "<img srcset=\"./?url=https%3A%2F%2Fwww.example.com%2Fheader640.png&hash=bf2aa9174435adfc3616a7bbb7f34e42cc7935e34feb23e0f6001b3acf2ceee0 640w, \
+            ./?url=https%3A%2F%2Fwww.example.com%2Fheader960.png&hash=197fbfa4294a326f377651d2297f8ed5bf45018210e8615c7ee5dd7fad7037ec 960w, \
+            ./?url=https%3A%2F%2Fwww.example.com%2Fheader1024.png&hash=d056d2f2316e7d9a1be4f34d7b430af80a610a87dc7616ae6d8d3d27cd84aef1 1024w, \
+            ./?url=https%3A%2F%2Fwww.example.com%2Fheader.png&hash=890ee860e875afc9c56d972f1f44d64b55d93aeaf73a7f24e1cd43fc5806a414\" \
             decoding=\"async\">"
         );
     }
@@ -708,9 +708,9 @@ mod tests {
 
         assert_eq!(
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
-            "<img srcset=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Fheader640%2Cpng\
-            &mortyhash=1d8c952a54f1680f0735c2f7e5129e0d7c5e721e4e96375db8c939f432db0b92 640w, \
-            ./?mortyurl=https%3A%2F%2Fwww.example.com%2Fheader%26png&mortyhash=\
+            "<img srcset=\"./?url=https%3A%2F%2Fwww.example.com%2Fheader640%2Cpng\
+            &hash=1d8c952a54f1680f0735c2f7e5129e0d7c5e721e4e96375db8c939f432db0b92 640w, \
+            ./?url=https%3A%2F%2Fwww.example.com%2Fheader%26png&hash=\
             da2a4431c30590e5fc1f0697677e62abe82327417228df6fe689af036c9828a5\" decoding=\"async\">"
         );
     }
@@ -902,7 +902,7 @@ mod tests {
         assert_eq!(
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
             format!("<head><style>\
-            body{{background-image:url('./?mortyurl=https%3A%2F%2Fwww.example.com%2Fmain.css&mortyhash=7d40cd69599262cfe009ac148491a37e9ec47dcf2386c2807bc2255fff6d5fa3')}}\
+            body{{background-image:url('./?url=https%3A%2F%2Fwww.example.com%2Fmain.css&hash=7d40cd69599262cfe009ac148491a37e9ec47dcf2386c2807bc2255fff6d5fa3')}}\
             </style>{}</head>",HEADER_STYLE_ELEMENT.as_str())
         );
     }
@@ -921,9 +921,9 @@ mod tests {
 
         assert_eq!(
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
-            format!("<head><style>url('./?mortyurl=https%3A%2F%2Fwww.example.com%2Fmain.css&mortyhash=7d40cd69599262cfe009ac148491a37e9ec47dcf2386c2807bc2255fff6d5fa3')</style>\
-            <style>url('./?mortyurl=https%3A%2F%2Fwww.example.com%2Findex.css&mortyhash=de26b17e7788f85987457601375a920242dee16379bd17769fe6b6fbcb90cfcf')</style>\
-            <style>url('./?mortyurl=https%3A%2F%2Fwww.example.com%2Ftheme.css&mortyhash=ddc8ae45cdbef1f3ddfc778ba578b36666f3b2541de07d5efbc1a2584a3e913c')</style>\
+            format!("<head><style>url('./?url=https%3A%2F%2Fwww.example.com%2Fmain.css&hash=7d40cd69599262cfe009ac148491a37e9ec47dcf2386c2807bc2255fff6d5fa3')</style>\
+            <style>url('./?url=https%3A%2F%2Fwww.example.com%2Findex.css&hash=de26b17e7788f85987457601375a920242dee16379bd17769fe6b6fbcb90cfcf')</style>\
+            <style>url('./?url=https%3A%2F%2Fwww.example.com%2Ftheme.css&hash=ddc8ae45cdbef1f3ddfc778ba578b36666f3b2541de07d5efbc1a2584a3e913c')</style>\
             {}</head>",HEADER_STYLE_ELEMENT.as_str())
         );
     }
@@ -942,8 +942,8 @@ mod tests {
 
         assert_eq!(
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
-            "<link rel=\"icon\" href=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Ffavicon.ico&\
-            mortyhash=fc10bed0a5b7786553e4f658be6029176875e29fe645f32251c0b7427b4f057d\">"
+            "<link rel=\"icon\" href=\"./?url=https%3A%2F%2Fwww.example.com%2Ffavicon.ico&\
+            hash=fc10bed0a5b7786553e4f658be6029176875e29fe645f32251c0b7427b4f057d\">"
         );
     }
 
@@ -961,8 +961,8 @@ mod tests {
 
         assert_eq!(
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
-            "<link rel=\"icon\" href=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Ffavicon%2Cico&\
-            mortyhash=7d143d57f49c3f4d096dbd79f17530a1fa2783373db3fb0dadf19bccdd4b4dd2\">"
+            "<link rel=\"icon\" href=\"./?url=https%3A%2F%2Fwww.example.com%2Ffavicon%2Cico&\
+            hash=7d143d57f49c3f4d096dbd79f17530a1fa2783373db3fb0dadf19bccdd4b4dd2\">"
         );
     }
 
@@ -980,7 +980,7 @@ mod tests {
 
         assert_eq!(
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
-            "<link rel=\"shortcut icon\" href=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Ffavicon.ico&mortyhash=fc10bed0a5b7786553e4f658be6029176875e29fe645f32251c0b7427b4f057d\">"
+            "<link rel=\"shortcut icon\" href=\"./?url=https%3A%2F%2Fwww.example.com%2Ffavicon.ico&hash=fc10bed0a5b7786553e4f658be6029176875e29fe645f32251c0b7427b4f057d\">"
         );
     }
 
@@ -998,7 +998,7 @@ mod tests {
 
         assert_eq!(
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
-            "<link href=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Fdefault.css&mortyhash=766b24ce591a42a33d5946c2c7382586c8f2ab501b40f5e154416298feb2565f\" rel=\"stylesheet\" type=\"text/css\">"
+            "<link href=\"./?url=https%3A%2F%2Fwww.example.com%2Fdefault.css&hash=766b24ce591a42a33d5946c2c7382586c8f2ab501b40f5e154416298feb2565f\" rel=\"stylesheet\" type=\"text/css\">"
         );
     }
 
@@ -1016,7 +1016,7 @@ mod tests {
 
         assert_eq!(
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
-            "<link href=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Fbasic.css&mortyhash=d5e4d42ff654522f6560ce8f8e689aab36c2df2bed12109b6d90b506a519d785\" rel=\"alternate stylesheet\" type=\"text/css\">"
+            "<link href=\"./?url=https%3A%2F%2Fwww.example.com%2Fbasic.css&hash=d5e4d42ff654522f6560ce8f8e689aab36c2df2bed12109b6d90b506a519d785\" rel=\"alternate stylesheet\" type=\"text/css\">"
         );
     }
 
@@ -1032,7 +1032,7 @@ mod tests {
 
         assert_eq!(
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
-            "<link href=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Fa&mortyhash=d2269853e1eda4c3f07592ef3742218dfa63c210d29f0fe3ea16f460efa164e8\" rel=\"help\">"
+            "<link href=\"./?url=https%3A%2F%2Fwww.example.com%2Fa&hash=d2269853e1eda4c3f07592ef3742218dfa63c210d29f0fe3ea16f460efa164e8\" rel=\"help\">"
         );
     }
 
@@ -1050,7 +1050,7 @@ mod tests {
 
         assert_eq!(
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
-            "<link href=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Fa&mortyhash=d2269853e1eda4c3f07592ef3742218dfa63c210d29f0fe3ea16f460efa164e8\" rel=\"license\">"
+            "<link href=\"./?url=https%3A%2F%2Fwww.example.com%2Fa&hash=d2269853e1eda4c3f07592ef3742218dfa63c210d29f0fe3ea16f460efa164e8\" rel=\"license\">"
         );
     }
 
@@ -1068,7 +1068,7 @@ mod tests {
 
         assert_eq!(
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
-            "<link href=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Frss&mortyhash=39c396215376bfb80ae7cfca44b10d145d593d8e326fc2138841bf03cddd042a\" rel=\"alternate\" type=\"application/rss+xml\">"
+            "<link href=\"./?url=https%3A%2F%2Fwww.example.com%2Frss&hash=39c396215376bfb80ae7cfca44b10d145d593d8e326fc2138841bf03cddd042a\" rel=\"alternate\" type=\"application/rss+xml\">"
         );
     }
 
@@ -1122,7 +1122,7 @@ mod tests {
 
         assert_eq!(
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
-            "<meta http-equiv=\"refresh\" content=\"1;url=./?mortyurl=https%3A%2F%2Fwww.example.com%2Fa&mortyhash=d2269853e1eda4c3f07592ef3742218dfa63c210d29f0fe3ea16f460efa164e8\">"
+            "<meta http-equiv=\"refresh\" content=\"1;url=./?url=https%3A%2F%2Fwww.example.com%2Fa&hash=d2269853e1eda4c3f07592ef3742218dfa63c210d29f0fe3ea16f460efa164e8\">"
         );
     }
 
@@ -1140,7 +1140,7 @@ mod tests {
 
         assert_eq!(
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
-            "<form method=\"POST\" action=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Fa&mortyhash=d2269853e1eda4c3f07592ef3742218dfa63c210d29f0fe3ea16f460efa164e8\" target=\"_self\">\
+            "<form method=\"POST\" action=\"./?url=https%3A%2F%2Fwww.example.com%2Fa&hash=d2269853e1eda4c3f07592ef3742218dfa63c210d29f0fe3ea16f460efa164e8\" target=\"_self\">\
             <input type=\"hidden\" name=\"_searproxy_origin_method\" value=\"get\"></form>"
         );
     }
@@ -1159,7 +1159,7 @@ mod tests {
 
         assert_eq!(
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
-            "<form method=\"POST\" action=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Fa&mortyhash=d2269853e1eda4c3f07592ef3742218dfa63c210d29f0fe3ea16f460efa164e8\" target=\"_self\">\
+            "<form method=\"POST\" action=\"./?url=https%3A%2F%2Fwww.example.com%2Fa&hash=d2269853e1eda4c3f07592ef3742218dfa63c210d29f0fe3ea16f460efa164e8\" target=\"_self\">\
             <input type=\"hidden\" name=\"_searproxy_origin_method\" value=\"Post\"></form>"
         );
     }
@@ -1176,7 +1176,7 @@ mod tests {
 
         assert_eq!(
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
-            "<form action=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2Fa&mortyhash=d2269853e1eda4c3f07592ef3742218dfa63c210d29f0fe3ea16f460efa164e8\" target=\"_self\" method=\"POST\"></form>"
+            "<form action=\"./?url=https%3A%2F%2Fwww.example.com%2Fa&hash=d2269853e1eda4c3f07592ef3742218dfa63c210d29f0fe3ea16f460efa164e8\" target=\"_self\" method=\"POST\"></form>"
         );
     }
 
@@ -1210,7 +1210,7 @@ mod tests {
 
         assert_eq!(
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
-            "<img srcset=\"./?mortyurl=https%3A%2F%2Fex.amp.le%2F&mortyhash=35e41e2ec2517a437522f9c921536eb6650c63fd8e9e34d8c5a001494c17481b 1w\" decoding=\"async\">"
+            "<img srcset=\"./?url=https%3A%2F%2Fex.amp.le%2F&hash=35e41e2ec2517a437522f9c921536eb6650c63fd8e9e34d8c5a001494c17481b 1w\" decoding=\"async\">"
         );
     }
 
@@ -1228,7 +1228,7 @@ mod tests {
 
         assert_eq!(
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
-            "<source srcset=\"./?mortyurl=https%3A%2F%2Fex.amp.le%2F&mortyhash=35e41e2ec2517a437522f9c921536eb6650c63fd8e9e34d8c5a001494c17481b 1w\">"
+            "<source srcset=\"./?url=https%3A%2F%2Fex.amp.le%2F&hash=35e41e2ec2517a437522f9c921536eb6650c63fd8e9e34d8c5a001494c17481b 1w\">"
         );
     }
 
@@ -1246,7 +1246,7 @@ mod tests {
 
         assert_eq!(
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
-            "<img srcset=\"./?mortyurl=https%3A%2F%2Fex.amp.le%2F&mortyhash=35e41e2ec2517a437522f9c921536eb6650c63fd8e9e34d8c5a001494c17481b 1x\" decoding=\"async\">"
+            "<img srcset=\"./?url=https%3A%2F%2Fex.amp.le%2F&hash=35e41e2ec2517a437522f9c921536eb6650c63fd8e9e34d8c5a001494c17481b 1x\" decoding=\"async\">"
         );
     }
 
@@ -1264,7 +1264,7 @@ mod tests {
 
         assert_eq!(
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
-            "<source srcset=\"./?mortyurl=https%3A%2F%2Fex.amp.le%2F&mortyhash=35e41e2ec2517a437522f9c921536eb6650c63fd8e9e34d8c5a001494c17481b 1x\">"
+            "<source srcset=\"./?url=https%3A%2F%2Fex.amp.le%2F&hash=35e41e2ec2517a437522f9c921536eb6650c63fd8e9e34d8c5a001494c17481b 1x\">"
         );
     }
 
@@ -1282,7 +1282,7 @@ mod tests {
 
         assert_eq!(
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
-            "<img srcset=\"./?mortyurl=https%3A%2F%2Fex.amp.le%2F&mortyhash=35e41e2ec2517a437522f9c921536eb6650c63fd8e9e34d8c5a001494c17481b 1w 2h\" decoding=\"async\">"
+            "<img srcset=\"./?url=https%3A%2F%2Fex.amp.le%2F&hash=35e41e2ec2517a437522f9c921536eb6650c63fd8e9e34d8c5a001494c17481b 1w 2h\" decoding=\"async\">"
         );
     }
 
@@ -1300,7 +1300,7 @@ mod tests {
 
         assert_eq!(
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
-            "<source srcset=\"./?mortyurl=https%3A%2F%2Fex.amp.le%2F&mortyhash=35e41e2ec2517a437522f9c921536eb6650c63fd8e9e34d8c5a001494c17481b 1w 2h\">"
+            "<source srcset=\"./?url=https%3A%2F%2Fex.amp.le%2F&hash=35e41e2ec2517a437522f9c921536eb6650c63fd8e9e34d8c5a001494c17481b 1w 2h\">"
         );
     }
 
@@ -1402,7 +1402,7 @@ mod tests {
         assert_eq!(
             std::str::from_utf8(result.html.as_slice()).unwrap(),
             format!(
-                "<html><body>{}<style>img{{opacity:1}}</style><a href=\"./?mortyurl=https%3A%2F%2Fwww.example.com%2F&mortyhash=85870232cac1676c4477f7cae4da7173ccee4002f32e89c16038547aa20175c0\">example</a></body></html>",
+                "<html><body>{}<style>img{{opacity:1}}</style><a href=\"./?url=https%3A%2F%2Fwww.example.com%2F&hash=85870232cac1676c4477f7cae4da7173ccee4002f32e89c16038547aa20175c0\">example</a></body></html>",
                 crate::templates::render_template_string(crate::templates::Template::Header(url))
             )
         );

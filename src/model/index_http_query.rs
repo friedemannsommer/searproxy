@@ -1,7 +1,7 @@
 #[derive(serde::Deserialize, serde::Serialize, Debug)]
 pub struct IndexHttpArgs {
-    #[serde(rename = "mortyurl")]
+    #[serde(alias = "mortyurl")]
     pub url: Option<String>,
-    #[serde(rename = "mortyhash")]
+    #[serde(alias = "mortyhash")]
     pub hash: Option<String>,
 }
