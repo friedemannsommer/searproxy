@@ -47,8 +47,7 @@ jobs:
           profile: minimal
           override: true
           toolchain: stable
-      - name: Rust cache
-        uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v1
       - name: Run tests
         uses: actions-rs/cargo@v1
         with:
@@ -65,8 +64,7 @@ jobs:
           profile: minimal
           override: true
           toolchain: stable
-      - name: Rust cache
-        uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v1
       - name: Run tests
         uses: actions-rs/cargo@v1
         with:
@@ -84,8 +82,7 @@ jobs:
           override: true
           toolchain: stable
           components: rustfmt
-      - name: Rust cache
-        uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v1
       - name: Run tests
         uses: actions-rs/cargo@v1
         with:
@@ -104,13 +101,42 @@ jobs:
           override: true
           toolchain: stable
           components: clippy
-      - name: Rust cache
-        uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v1
       - name: Run tests
         uses: actions-rs/cargo@v1
         with:
           command: clippy
           args: -- -D warnings
+
+  clippy-analyze:
+    name: Run rust-clippy analyzing
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          components: clippy
+          override: true
+      - uses: Swatinem/rust-cache@v1
+      - name: Install required cargo
+        run: cargo install clippy-sarif sarif-fmt
+      - name: Run rust-clippy
+        run:
+          cargo clippy
+          --all-features
+          --message-format=json | clippy-sarif | tee rust-clippy-results.sarif | sarif-fmt
+        continue-on-error: true
+      - name: Upload analysis results to GitHub
+        uses: github/codeql-action/upload-sarif@v1
+        with:
+          sarif_file: rust-clippy-results.sarif
+          wait-for-processing: true
 
   build-release:
     name: "Build release"
@@ -145,8 +171,7 @@ jobs:
           override: true
           toolchain: stable
           target: ${{ matrix.target }}
-      - name: Rust cache
-        uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v1
         with:
           key: ${{ matrix.target }}
       - uses: actions-rs/cargo@v1

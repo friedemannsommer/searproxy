@@ -41,8 +41,7 @@ jobs:
           profile: minimal
           override: true
           toolchain: stable
-      - name: Rust cache
-        uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v1
       - name: Install "cargo-about"
         uses: actions-rs/cargo@v1
         with:
