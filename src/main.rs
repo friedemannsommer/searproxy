@@ -20,6 +20,7 @@
     rust_2018_idioms,
     unused
 )]
+#![allow(clippy::multiple_crate_versions)]
 
 mod assets;
 mod lib;
