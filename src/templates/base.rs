@@ -67,7 +67,7 @@ markup::define! {
 pub fn blank_ref<Content: markup::Render>(
     url: &str,
     content: Content,
-) -> ExternalLinkTemplate<Content> {
+) -> ExternalLinkTemplate<'_, Content> {
     ExternalLinkTemplate { url, content }
 }
 
@@ -75,6 +75,6 @@ pub fn blank_ref<Content: markup::Render>(
 pub fn self_ref<Content: markup::Render>(
     url: &str,
     content: Content,
-) -> InternalLinkTemplate<Content> {
+) -> InternalLinkTemplate<'_, Content> {
     InternalLinkTemplate { url, content }
 }

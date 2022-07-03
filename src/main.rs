@@ -1,4 +1,25 @@
-#![deny(unsafe_code)]
+#![deny(
+    clippy::correctness,
+    clippy::style,
+    keyword_idents,
+    macro_use_extern_crate,
+    non_ascii_idents,
+    nonstandard_style,
+    noop_method_call,
+    pointer_structural_match,
+    trivial_casts,
+    trivial_numeric_casts,
+    unsafe_code,
+    unused_crate_dependencies
+)]
+#![warn(
+    clippy::cargo,
+    clippy::complexity,
+    clippy::perf,
+    clippy::suspicious,
+    rust_2018_idioms,
+    unused
+)]
 
 mod assets;
 mod lib;
@@ -49,7 +70,7 @@ fn parse_socket_listener(input: &str) -> model::SocketListener {
     panic!("Listener could not be parsed: '{}'", input)
 }
 
-fn init_logging(config: &model::Config) {
+fn init_logging(config: &model::Config<'_, '_>) {
     if config.log_level != log::LevelFilter::Off {
         let mut logger = fern::Dispatch::new().level(config.log_level);
 

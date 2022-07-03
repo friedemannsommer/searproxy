@@ -176,7 +176,8 @@ impl<'html> HtmlRewrite<'html> {
 
     fn transform_src(
         base_url: Rc<url::Url>,
-    ) -> impl Fn(&mut Element) -> Result<(), Box<dyn std::error::Error + Send + Sync>> + 'html {
+    ) -> impl Fn(&mut Element<'_, '_>) -> Result<(), Box<dyn std::error::Error + Send + Sync>> + 'html
+    {
         move |element| {
             element.set_attribute(
                 "src",
@@ -192,8 +193,9 @@ impl<'html> HtmlRewrite<'html> {
 
     fn transform_img(
         allow_lazy: bool,
-    ) -> impl Fn(&mut Element) -> Result<(), Box<dyn std::error::Error + Send + Sync>> + 'html {
-        move |element: &mut Element| {
+    ) -> impl Fn(&mut Element<'_, '_>) -> Result<(), Box<dyn std::error::Error + Send + Sync>> + 'html
+    {
+        move |element: &mut Element<'_, '_>| {
             if allow_lazy {
                 element.set_attribute("loading", "lazy")?;
             } else {
@@ -208,7 +210,8 @@ impl<'html> HtmlRewrite<'html> {
 
     fn transform_srcset(
         base_url: Rc<url::Url>,
-    ) -> impl Fn(&mut Element) -> Result<(), Box<dyn std::error::Error + Send + Sync>> + 'html {
+    ) -> impl Fn(&mut Element<'_, '_>) -> Result<(), Box<dyn std::error::Error + Send + Sync>> + 'html
+    {
         move |element| {
             let src_set_values = element.get_attribute("srcset").unwrap();
             let mut output = String::with_capacity(src_set_values.len());
@@ -234,8 +237,9 @@ impl<'html> HtmlRewrite<'html> {
 
     fn transform_href(
         base_url: Rc<url::Url>,
-    ) -> impl Fn(&mut Element) -> Result<(), Box<dyn std::error::Error + Send + Sync>> + 'html {
-        move |element: &mut Element| {
+    ) -> impl Fn(&mut Element<'_, '_>) -> Result<(), Box<dyn std::error::Error + Send + Sync>> + 'html
+    {
+        move |element: &mut Element<'_, '_>| {
             element.set_attribute(
                 "href",
                 &rewrite_url(
@@ -252,8 +256,9 @@ impl<'html> HtmlRewrite<'html> {
         base_url: Rc<url::Url>,
         css_rewriter: CssRewriteRef,
         style_hashes: StyleHashList,
-    ) -> impl Fn(&mut Element) -> Result<(), Box<dyn std::error::Error + Send + Sync>> + 'html {
-        move |element: &mut Element| {
+    ) -> impl Fn(&mut Element<'_, '_>) -> Result<(), Box<dyn std::error::Error + Send + Sync>> + 'html
+    {
+        move |element: &mut Element<'_, '_>| {
             css_rewriter.replace(Some(CssRewrite::new(base_url.clone())));
             element.on_end_tag(Self::flush_style(
                 css_rewriter.clone(),
@@ -267,7 +272,7 @@ impl<'html> HtmlRewrite<'html> {
     fn flush_style(
         css_rewriter: CssRewriteRef,
         style_hashes: StyleHashList,
-    ) -> impl Fn(&mut EndTag) -> Result<(), Box<dyn std::error::Error + Send + Sync>> + 'static
+    ) -> impl Fn(&mut EndTag<'_>) -> Result<(), Box<dyn std::error::Error + Send + Sync>> + 'static
     {
         move |end| {
             let current_css_rewriter = css_rewriter.replace(None);
@@ -296,9 +301,9 @@ impl<'html> HtmlRewrite<'html> {
 
     fn write_style(
         css_rewriter: CssRewriteRef,
-    ) -> impl FnMut(&mut TextChunk) -> Result<(), Box<dyn std::error::Error + Send + Sync>> + 'html
+    ) -> impl FnMut(&mut TextChunk<'_>) -> Result<(), Box<dyn std::error::Error + Send + Sync>> + 'html
     {
-        move |text: &mut TextChunk| {
+        move |text: &mut TextChunk<'_>| {
             css_rewriter
                 .borrow_mut()
                 .as_mut()
@@ -311,8 +316,8 @@ impl<'html> HtmlRewrite<'html> {
 
     fn transform_form(
         base_url: Rc<url::Url>,
-    ) -> impl Fn(&mut Element) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        move |element: &mut Element| {
+    ) -> impl Fn(&mut Element<'_, '_>) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        move |element: &mut Element<'_, '_>| {
             use std::str::FromStr;
 
             element.set_attribute("target", "_self")?;
@@ -345,7 +350,7 @@ impl<'html> HtmlRewrite<'html> {
     }
 
     fn filter_link_elements(
-        element: &mut Element,
+        element: &mut Element<'_, '_>,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         if let Some(rel) = element.get_attribute("rel") {
             if !ALLOWED_LINK_REL_VALUES.contains(&rel.to_ascii_lowercase().as_str()) {
@@ -360,8 +365,8 @@ impl<'html> HtmlRewrite<'html> {
 
     fn filter_meta_elements(
         base_url: Rc<url::Url>,
-    ) -> impl Fn(&mut Element) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        move |element: &mut Element| {
+    ) -> impl Fn(&mut Element<'_, '_>) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        move |element: &mut Element<'_, '_>| {
             if let Some(http_equiv) = element.get_attribute("http-equiv") {
                 let lc_equiv = http_equiv.to_ascii_lowercase();
                 let lc_equiv_trim = lc_equiv.trim();
@@ -406,7 +411,8 @@ impl<'html> HtmlRewrite<'html> {
         base_url: Rc<url::Url>,
         noscript_buf: NoScriptBuffer,
         style_hashes: StyleHashList,
-    ) -> impl Fn(&mut Element) -> Result<(), Box<dyn std::error::Error + Send + Sync>> + 'html {
+    ) -> impl Fn(&mut Element<'_, '_>) -> Result<(), Box<dyn std::error::Error + Send + Sync>> + 'html
+    {
         move |element| {
             element.on_end_tag(Self::flush_noscript_content(
                 base_url.clone(),
@@ -423,7 +429,7 @@ impl<'html> HtmlRewrite<'html> {
         base_url: Rc<url::Url>,
         noscript_buf: NoScriptBuffer,
         style_hashes: StyleHashList,
-    ) -> impl Fn(&mut EndTag) -> Result<(), Box<dyn std::error::Error + Send + Sync>> + 'static
+    ) -> impl Fn(&mut EndTag<'_>) -> Result<(), Box<dyn std::error::Error + Send + Sync>> + 'static
     {
         move |end| {
             let mut rewriter = HtmlRewrite::new(base_url.clone());
@@ -448,7 +454,7 @@ impl<'html> HtmlRewrite<'html> {
 
     fn write_noscript_content(
         noscript_buf: NoScriptBuffer,
-    ) -> impl FnMut(&mut TextChunk) -> Result<(), Box<dyn std::error::Error + Send + Sync>> + 'html
+    ) -> impl FnMut(&mut TextChunk<'_>) -> Result<(), Box<dyn std::error::Error + Send + Sync>> + 'html
     {
         move |chunk| {
             noscript_buf.borrow_mut().push_str(chunk.as_str());
@@ -459,8 +465,9 @@ impl<'html> HtmlRewrite<'html> {
 
     fn append_proxy_header(
         base_url: Rc<url::Url>,
-    ) -> impl Fn(&mut Element) -> Result<(), Box<dyn std::error::Error + Send + Sync>> + 'html {
-        move |element: &mut Element| {
+    ) -> impl Fn(&mut Element<'_, '_>) -> Result<(), Box<dyn std::error::Error + Send + Sync>> + 'html
+    {
+        move |element: &mut Element<'_, '_>| {
             element.prepend(
                 crate::templates::render_template_string(crate::templates::Template::Header(
                     base_url.clone(),
@@ -474,7 +481,7 @@ impl<'html> HtmlRewrite<'html> {
     }
 
     fn append_proxy_styles(
-        element: &mut Element,
+        element: &mut Element<'_, '_>,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         element.append(
             &HEADER_STYLE_ELEMENT,
@@ -485,7 +492,7 @@ impl<'html> HtmlRewrite<'html> {
     }
 
     fn remove_disallowed_attributes(
-        element: &mut Element,
+        element: &mut Element<'_, '_>,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         if element.tag_name() == "meta" {
             let mut should_remove = false;
@@ -522,14 +529,14 @@ impl<'html> HtmlRewrite<'html> {
     }
 
     fn remove_element(
-        element: &mut Element,
+        element: &mut Element<'_, '_>,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         element.remove();
 
         Ok(())
     }
 
-    fn get_unchecked_attribute_value(element: &Element, name: &str) -> String {
+    fn get_unchecked_attribute_value(element: &Element<'_, '_>, name: &str) -> String {
         Self::html_entity_decode(element.get_attribute(name).unwrap().as_str())
     }
 
