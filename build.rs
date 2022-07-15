@@ -16,13 +16,15 @@ fn main() {
                 let filename = path.file_name().unwrap().to_str().unwrap();
                 let file_contents = String::from_utf8(fs::read(&path).unwrap()).unwrap();
                 let stylesheet = StyleSheet::parse(
-                    filename,
                     file_contents.as_str(),
                     ParserOptions {
                         css_modules: None,
                         custom_media: false,
+                        error_recovery: false,
+                        filename: filename.to_string(),
                         nesting: true,
                         source_index: 0,
+                        warnings: None,
                     },
                 )
                 .unwrap();
