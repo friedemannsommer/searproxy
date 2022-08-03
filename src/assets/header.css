@@ -1,9 +1,23 @@
 body > div:first-child {
+    -moz-flex-flow: row wrap;
+    -moz-justify-content: space-between;
+    -webkit-align-content: center;
+    -webkit-align-items: center;
+    -webkit-flex-flow: row wrap;
+    -webkit-justify-content: space-between;
+    align-content: center;
+    align-items: center;
     background: #000;
+    border-radius: unset;
     border: none;
+    box-shadow: unset;
     box-sizing: border-box;
-    display: block;
+    display: -moz-flex;
+    display: -webkit-flex;
+    display: flex;
+    flex-flow: row wrap;
     height: auto;
+    justify-content: space-between;
     left: 0;
     margin: 0;
     padding: 4px;
@@ -12,14 +26,13 @@ body > div:first-child {
     top: 0;
     width: 100%;
     z-index: 2147483647 !important;
-    -moz-box-sizing: border-box;
-    -webkit-box-sizing: border-box;
 }
 
-body > div:first-child:after {
-    content: "";
-    display: table;
-    clear: both;
+body > div:first-child > * {
+    -moz-flex: initial;
+    -webkit-flex: initial;
+    align-self: auto;
+    flex: initial;
 }
 
 body > div:first-child > h1 {
@@ -27,11 +40,11 @@ body > div:first-child > h1 {
     box-sizing: border-box;
     color: #fff;
     display: block;
-    float: left;
-    font-size: 20px;
+    font-family: "Open Sans", "Garamond", "Georgia", sans-serif;
+    font-size: 1.5rem;
     font-weight: bold;
     height: auto;
-    line-height: 30px;
+    line-height: 2rem;
     margin: 0;
     padding: 0;
     width: auto;
@@ -45,10 +58,10 @@ body > div:first-child > h1 > a, body > div:first-child > h1 > a:hover, body > d
     cursor: pointer;
     display: inline;
     font-family: "Open Sans", "Garamond", "Georgia", sans-serif;
-    font-size: 20px;
+    font-size: 1.5rem;
     font-weight: bold;
-    line-height: 30px;
-    text-decoration: none;
+    line-height: 2rem;
+    text-decoration: underline;
 }
 
 body > div:first-child > p {
@@ -56,12 +69,11 @@ body > div:first-child > p {
     box-sizing: border-box;
     color: #fff;
     display: block;
-    float: right;
     font-family: "Open Sans", "Garamond", "Georgia", sans-serif;
-    font-size: 20px;
+    font-size: 1.25rem;
     font-weight: normal;
     height: auto;
-    line-height: 30px;
+    line-height: 1.5rem;
     margin: 0;
     padding: 0;
     width: auto;
@@ -71,12 +83,12 @@ body > div:first-child > p > a, body > div:first-child > p > a:hover, body > div
     background: #000;
     border: none;
     box-sizing: border-box;
-    cursor: pointer;
     color: #fff;
+    cursor: pointer;
     display: inline;
     font-family: "Open Sans", "Garamond", "Georgia", sans-serif;
-    font-size: 20px;
+    font-size: 1.25rem;
     font-weight: normal;
-    line-height: 30px;
+    line-height: 1.5rem;
     text-decoration: underline;
 }
