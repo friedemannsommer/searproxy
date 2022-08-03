@@ -36,7 +36,7 @@ const ALLOWED_LINK_REL_VALUES: [&str; 7] = [
 
 static IMG_SRCSET_REGEX: once_cell::sync::Lazy<regex::Regex> = once_cell::sync::Lazy::new(|| {
     regex::Regex::new(
-        r"(?P<url>[\w#!;:.?~+=*&%@!(')$/\-\[\]]+)(?:\s+(?:[0-9]+\.)?[0-9]+[xw]\s*(?:[0-9]+h)?\s*,?|$)",
+        r"(?P<url>[\w#!;:.,?~+=*&%@!(')$/\-\[\]]+)(?:\s+(?:[0-9]+\.)?[0-9]+[xw]\s*(?:[0-9]+h)?\s*,?|$)",
     )
     .expect("RegExp compilation failed")
 });
@@ -849,8 +849,9 @@ mod tests {
         assert_eq!(
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
             // this is pretty finicky... (and will break if the "header.html" formatting changes)
-            "<body><div><h1><a href=\"./\" target=\"_self\" rel=\"noreferrer noopener\">SearProxy</a></h1><p>This is a proxified and sanitized version, visit \
-            <a href=\"https://www.example.com/index.html\" target=\"_self\" rel=\"noreferrer noopener\">original page</a>.</p></div><h1>Test</h1></body>"
+            "<body><div><h1><a href=\"./\" target=\"_self\" rel=\"noreferrer noopener\">SearProxy</a> is neither the owner nor the author of this content.</h1>\
+            <p>Scripts are deactivated. Web page appearance may have changed. Visit the <a href=\"https://www.example.com/index.html\" target=\"_self\" rel=\"noreferrer noopener\">\
+            original page</a>.</p></div><h1>Test</h1></body>"
         );
     }
 
@@ -1272,6 +1273,42 @@ mod tests {
         assert_eq!(
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
             "<source srcset=\"./?url=https%3A%2F%2Fex.amp.le%2F&hash=35e41e2ec2517a437522f9c921536eb6650c63fd8e9e34d8c5a001494c17481b 1x\">"
+        );
+    }
+
+    #[test]
+    fn rewrite_valid_data_source_srcset_n1() {
+        crate::lib::test_setup_hmac();
+
+        let mut rewriter = HtmlRewrite::new(Rc::new(
+            url::Url::parse("https://www.example.com/").unwrap(),
+        ));
+
+        rewriter
+            .write(b"<source srcset=\"data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7\">")
+            .unwrap();
+
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
+            "<source srcset=\"data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7\">"
+        );
+    }
+
+    #[test]
+    fn rewrite_valid_density_data_source_srcset_n1() {
+        crate::lib::test_setup_hmac();
+
+        let mut rewriter = HtmlRewrite::new(Rc::new(
+            url::Url::parse("https://www.example.com/").unwrap(),
+        ));
+
+        rewriter
+            .write(b"<source srcset=\"data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7 1x\">")
+            .unwrap();
+
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
+            "<source srcset=\"data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7 1x\">"
         );
     }
 

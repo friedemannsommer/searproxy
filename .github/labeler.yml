@@ -22,6 +22,9 @@ license:
 markdown:
   - any: [ '**/*.md' ]
 
+template:
+  - any: [ 'src/templates/**/*.rs' ]
+
 git:
   - any: [ '**/*.gitignore', '**/*.gitattributes' ]
 
