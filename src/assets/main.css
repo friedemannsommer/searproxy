@@ -6,29 +6,24 @@ html {
 }
 
 body {
-    -ms-flex-align: center;
-    -ms-flex-direction: column;
-    -ms-flex-line-pack: center;
-    -ms-flex-pack: justify;
-    -ms-flex-wrap: nowrap;
+    -moz-flex-flow: column wrap;
+    -moz-justify-content: space-between;
     -webkit-align-content: center;
     -webkit-align-items: center;
-    -webkit-flex-direction: column;
-    -webkit-flex-wrap: nowrap;
+    -webkit-flex-flow: column wrap;
     -webkit-justify-content: space-between;
     align-content: center;
     align-items: center;
-    display: -ms-flexbox;
-    display: -webkit-flex;
-    display: flex;
-    flex-direction: column;
-    flex-wrap: nowrap;
-    justify-content: space-between;
     background: #fff;
     color: #121212;
+    display: -moz-flex;
+    display: -webkit-flex;
+    display: flex;
+    flex-flow: column wrap;
     font-family: "Open Sans", "Garamond", "Georgia", sans-serif;
     font-size: 1em;
     font-weight: 400;
+    justify-content: space-between;
     line-height: 1.5em;
     margin: 0;
     min-height: 100%;
@@ -37,12 +32,10 @@ body {
 }
 
 body > * {
-    -ms-flex-item-align: auto;
-    -ms-flex: 0 1 auto;
-    -webkit-align-self: auto;
-    -webkit-flex: 0 1 auto;
+    -moz-flex: initial;
+    -webkit-flex: initial;
     align-self: auto;
-    flex: 0 1 auto;
+    flex: initial;
 }
 
 main {
@@ -91,7 +84,6 @@ p {
 abbr[title] {
     border-bottom: none;
     text-decoration: underline;
-    text-decoration: underline dotted;
 }
 
 b, strong {
