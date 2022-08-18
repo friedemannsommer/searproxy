@@ -8,12 +8,13 @@ use crate::{
 };
 
 type CssRewriteRef = Rc<RefCell<Option<CssRewrite>>>;
-type StyleHashList = Rc<RefCell<Vec<String>>>;
 type NoScriptBuffer = Rc<RefCell<String>>;
+type OutputSink = Box<dyn Fn(&[u8])>;
+type StyleHashList = Rc<RefCell<Vec<String>>>;
 
 pub struct HtmlRewrite<'html> {
     output: Rc<RefCell<Vec<u8>>>,
-    rewriter: lol_html::HtmlRewriter<'html, Box<dyn FnMut(&[u8])>>,
+    rewriter: lol_html::HtmlRewriter<'html, OutputSink>,
     style_hashes: StyleHashList,
 }
 
