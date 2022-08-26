@@ -1219,9 +1219,9 @@ checksum = "648001efe5d5c0102d8cea768e348da85d90af8ba91f0bea908f157951493cd4"
 
 [[package]]
 name = "parcel_css"
-version = "1.0.0-alpha.30"
+version = "1.0.0-alpha.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b601fff36c1b344730026ec8ebd3e0a12746196143e04a4e01dbac783344e7f1"
+checksum = "94581c98f13e96040640b32cdfe9d215c475950ca47d02e1bd35cb4bb5fb703d"
 dependencies = [
  "bitflags",
  "const-str",
@@ -1239,9 +1239,9 @@ dependencies = [
 
 [[package]]
 name = "parcel_selectors"
-version = "0.24.4"
+version = "0.24.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c996d8dc9a051d5dcad28bb47455954e77feccbd767786035a367cd433cb4933"
+checksum = "95cf8992bec228b932c3848fcd001a3a48ea618f0acf1c86e797479dd0ec4599"
 dependencies = [
  "bitflags",
  "cssparser 0.29.6",
