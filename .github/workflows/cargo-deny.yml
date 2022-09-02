@@ -5,9 +5,10 @@ on:
     branches:
       - "*"
     paths:
-      - 'Cargo.toml'
-      - 'deny.toml'
-      - '.github/workflows/cargo-deny.yml'
+      - ".github/workflows/cargo-deny.yml"
+      - "Cargo.lock"
+      - "Cargo.toml"
+      - "deny.toml"
 
 permissions:
   actions: none

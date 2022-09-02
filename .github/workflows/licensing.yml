@@ -5,10 +5,11 @@ on:
     branches:
       - main
     paths:
-      - "Cargo.toml"
+      - ".github/workflows/licensing.yml"
       - "licensing/about.hbs"
       - "licensing/about.toml"
-      - ".github/workflows/licensing.yml"
+      - "Cargo.lock"
+      - "Cargo.toml"
 
 permissions:
   actions: none

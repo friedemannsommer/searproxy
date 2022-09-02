@@ -7,16 +7,18 @@ on:
     tags:
       - "v*.*.*"
     paths:
-      - "src/**"
-      - "Cargo.toml"
       - ".github/workflows/ci.yml"
+      - "Cargo.lock"
+      - "Cargo.toml"
+      - "src/**"
   pull_request:
     branches:
       - "*"
     paths:
-      - "src/**"
-      - "Cargo.toml"
       - ".github/workflows/ci.yml"
+      - "Cargo.lock"
+      - "Cargo.toml"
+      - "src/**"
 
 permissions:
   actions: none
