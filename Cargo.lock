@@ -1220,9 +1220,9 @@ checksum = "9ff7415e9ae3fff1225851df9e0d9e4e5479f947619774677a63572e55e80eff"
 
 [[package]]
 name = "parcel_css"
-version = "1.0.0-alpha.31"
+version = "1.0.0-alpha.32"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "94581c98f13e96040640b32cdfe9d215c475950ca47d02e1bd35cb4bb5fb703d"
+checksum = "227ba7ffdb83296ac3b215075650a0836ddf954abc9f8d4265745004556303f5"
 dependencies = [
  "bitflags",
  "const-str",

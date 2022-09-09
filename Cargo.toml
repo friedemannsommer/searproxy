@@ -51,7 +51,7 @@ features = ["std"]
 
 [build-dependencies]
 base64 = "=0.13.0"
-parcel_css = "=1.0.0-alpha.31"
+parcel_css = "=1.0.0-alpha.32"
 
 [build-dependencies.sha2]
 version = "=0.10.5"
