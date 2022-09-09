@@ -1,7 +1,8 @@
 use std::{env, fs, path::PathBuf};
 
-use parcel_css::stylesheet::{ParserOptions, PrinterOptions, StyleSheet};
 use sha2::{Digest, Sha256};
+
+use lightningcss::stylesheet::{ParserOptions, PrinterOptions, StyleSheet};
 
 fn main() {
     let out_dir = PathBuf::from(env::var_os("OUT_DIR").unwrap());

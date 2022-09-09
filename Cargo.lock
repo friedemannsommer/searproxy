@@ -1035,6 +1035,26 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8371e4e5341c3a96db127eb2465ac681ced4c433e01dd0e938adbef26ba93ba5"
 
 [[package]]
+name = "lightningcss"
+version = "1.0.0-alpha.33"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c7d67dd7600fdae8fa6a5e4b2d587202a10e4754a9c9c3c388d91f4c7d014e65"
+dependencies = [
+ "bitflags",
+ "const-str",
+ "cssparser 0.29.6",
+ "dashmap",
+ "data-encoding",
+ "itertools",
+ "lazy_static",
+ "parcel_selectors",
+ "parcel_sourcemap",
+ "rayon",
+ "serde",
+ "smallvec",
+]
+
+[[package]]
 name = "linked-hash-map"
 version = "0.5.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1216,26 +1236,6 @@ name = "os_str_bytes"
 version = "6.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9ff7415e9ae3fff1225851df9e0d9e4e5479f947619774677a63572e55e80eff"
-
-[[package]]
-name = "parcel_css"
-version = "1.0.0-alpha.31"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "94581c98f13e96040640b32cdfe9d215c475950ca47d02e1bd35cb4bb5fb703d"
-dependencies = [
- "bitflags",
- "const-str",
- "cssparser 0.29.6",
- "dashmap",
- "data-encoding",
- "itertools",
- "lazy_static",
- "parcel_selectors",
- "parcel_sourcemap",
- "rayon",
- "serde",
- "smallvec",
-]
 
 [[package]]
 name = "parcel_selectors"
@@ -1809,12 +1809,12 @@ dependencies = [
  "hex",
  "hmac",
  "htmlentity",
+ "lightningcss",
  "log",
  "lol_html",
  "markup",
  "mime",
  "once_cell",
- "parcel_css",
  "regex",
  "reqwest",
  "serde",
