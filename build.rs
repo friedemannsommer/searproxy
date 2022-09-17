@@ -1,8 +1,7 @@
 use std::{env, fs, path::PathBuf};
 
-use sha2::{Digest, Sha256};
-
 use lightningcss::stylesheet::{ParserOptions, PrinterOptions, StyleSheet};
+use sha2::{Digest, Sha256};
 
 fn main() {
     let out_dir = PathBuf::from(env::var_os("OUT_DIR").unwrap());
@@ -32,7 +31,7 @@ fn main() {
 
                 let minified_stylesheet = stylesheet
                     .to_css(PrinterOptions {
-                        analyze_dependencies: false,
+                        analyze_dependencies: None,
                         minify: true,
                         pseudo_classes: None,
                         source_map: None,
