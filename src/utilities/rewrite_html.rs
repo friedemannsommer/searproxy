@@ -4,7 +4,7 @@ use lol_html::html_content::{Element, EndTag, TextChunk};
 
 use crate::{
     assets::HEADER_STYLESHEET,
-    lib::{rewrite_css::CssRewrite, rewrite_url::rewrite_url},
+    utilities::{rewrite_css::CssRewrite, rewrite_url::rewrite_url},
 };
 
 type CssRewriteRef = Rc<RefCell<Option<CssRewrite>>>;
@@ -125,7 +125,7 @@ impl<'html> HtmlRewrite<'html> {
                         lol_html::element!("head", Self::append_proxy_styles),
                         lol_html::element!(
                             "img",
-                            Self::transform_img(match crate::lib::shared::GLOBAL_CONFIG.get() {
+                            Self::transform_img(match crate::utilities::shared::GLOBAL_CONFIG.get() {
                                 Some(config) => config.lazy_images,
                                 _ => false,
                             })
@@ -554,11 +554,11 @@ impl<'html> HtmlRewrite<'html> {
 mod tests {
     use std::rc::Rc;
 
-    use crate::lib::rewrite_html::{HtmlRewrite, HEADER_STYLE_ELEMENT};
+    use crate::utilities::rewrite_html::{HtmlRewrite, HEADER_STYLE_ELEMENT};
 
     #[test]
     fn rewrite_a_href_relative_n_1() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         let mut rewriter = HtmlRewrite::new(Rc::new(
             url::Url::parse("https://www.example.com/index.html").unwrap(),
@@ -575,7 +575,7 @@ mod tests {
 
     #[test]
     fn rewrite_a_href_relative_html_entity_n_1() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         let mut rewriter = HtmlRewrite::new(Rc::new(
             url::Url::parse("https://www.example.com/index.html").unwrap(),
@@ -594,7 +594,7 @@ mod tests {
 
     #[test]
     fn rewrite_img_src_relative_n_1() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         let mut rewriter = HtmlRewrite::new(Rc::new(
             url::Url::parse("https://www.example.com/").unwrap(),
@@ -612,7 +612,7 @@ mod tests {
 
     #[test]
     fn rewrite_img_src_relative_html_entity_n_1() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         let mut rewriter = HtmlRewrite::new(Rc::new(
             url::Url::parse("https://www.example.com/").unwrap(),
@@ -630,7 +630,7 @@ mod tests {
 
     #[test]
     fn rewrite_iframe_src_relative_n_1() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         let mut rewriter = HtmlRewrite::new(Rc::new(
             url::Url::parse("https://www.example.com/").unwrap(),
@@ -649,7 +649,7 @@ mod tests {
 
     #[test]
     fn rewrite_iframe_src_relative_html_entity_n_1() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         let mut rewriter = HtmlRewrite::new(Rc::new(
             url::Url::parse("https://www.example.com/").unwrap(),
@@ -668,7 +668,7 @@ mod tests {
 
     #[test]
     fn rewrite_img_attributes_n_1() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         let mut rewriter = HtmlRewrite::new(Rc::new(
             url::Url::parse("https://www.example.com/").unwrap(),
@@ -684,7 +684,7 @@ mod tests {
 
     #[test]
     fn rewrite_img_srcset_n_1() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         let mut rewriter = HtmlRewrite::new(Rc::new(
             url::Url::parse("https://www.example.com/").unwrap(),
@@ -704,7 +704,7 @@ mod tests {
 
     #[test]
     fn rewrite_img_srcset_html_entity_n_1() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         let mut rewriter = HtmlRewrite::new(Rc::new(
             url::Url::parse("https://www.example.com/").unwrap(),
@@ -725,7 +725,7 @@ mod tests {
 
     #[test]
     fn rewrite_iframe_attributes_n_1() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         let mut rewriter = HtmlRewrite::new(Rc::new(
             url::Url::parse("https://www.example.com/").unwrap(),
@@ -743,7 +743,7 @@ mod tests {
 
     #[test]
     fn remove_applet_n_1() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         let mut rewriter = HtmlRewrite::new(Rc::new(
             url::Url::parse("https://www.example.com/index.html").unwrap(),
@@ -759,7 +759,7 @@ mod tests {
 
     #[test]
     fn remove_canvas_n_1() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         let mut rewriter = HtmlRewrite::new(Rc::new(
             url::Url::parse("https://www.example.com/index.html").unwrap(),
@@ -775,7 +775,7 @@ mod tests {
 
     #[test]
     fn remove_embed_n_1() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         let mut rewriter = HtmlRewrite::new(Rc::new(
             url::Url::parse("https://www.example.com/index.html").unwrap(),
@@ -791,7 +791,7 @@ mod tests {
 
     #[test]
     fn remove_math_n_1() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         let mut rewriter = HtmlRewrite::new(Rc::new(
             url::Url::parse("https://www.example.com/index.html").unwrap(),
@@ -807,7 +807,7 @@ mod tests {
 
     #[test]
     fn remove_script_n_1() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         let mut rewriter = HtmlRewrite::new(Rc::new(
             url::Url::parse("https://www.example.com/index.html").unwrap(),
@@ -823,7 +823,7 @@ mod tests {
 
     #[test]
     fn remove_svg_n_1() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         let mut rewriter = HtmlRewrite::new(Rc::new(
             url::Url::parse("https://www.example.com/index.html").unwrap(),
@@ -839,7 +839,7 @@ mod tests {
 
     #[test]
     fn rewrite_body_n_1() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         let mut rewriter = HtmlRewrite::new(Rc::new(
             url::Url::parse("https://www.example.com/index.html").unwrap(),
@@ -858,7 +858,7 @@ mod tests {
 
     #[test]
     fn rewrite_head_n_1() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         let mut rewriter = HtmlRewrite::new(Rc::new(
             url::Url::parse("https://www.example.com/index.html").unwrap(),
@@ -877,7 +877,7 @@ mod tests {
 
     #[test]
     fn rewrite_style_plain_n_1() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         let mut rewriter = HtmlRewrite::new(Rc::new(
             url::Url::parse("https://www.example.com/").unwrap(),
@@ -898,7 +898,7 @@ mod tests {
 
     #[test]
     fn rewrite_style_url_n_1() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         let mut rewriter = HtmlRewrite::new(Rc::new(
             url::Url::parse("https://www.example.com/").unwrap(),
@@ -918,7 +918,7 @@ mod tests {
 
     #[test]
     fn rewrite_style_url_n_3() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         let mut rewriter = HtmlRewrite::new(Rc::new(
             url::Url::parse("https://www.example.com/").unwrap(),
@@ -939,7 +939,7 @@ mod tests {
 
     #[test]
     fn rewrite_link_icon_n_1() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         let mut rewriter = HtmlRewrite::new(Rc::new(
             url::Url::parse("https://www.example.com/").unwrap(),
@@ -958,7 +958,7 @@ mod tests {
 
     #[test]
     fn rewrite_link_icon_html_entity_n_1() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         let mut rewriter = HtmlRewrite::new(Rc::new(
             url::Url::parse("https://www.example.com/").unwrap(),
@@ -977,7 +977,7 @@ mod tests {
 
     #[test]
     fn rewrite_link_shortcut_icon_n_1() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         let mut rewriter = HtmlRewrite::new(Rc::new(
             url::Url::parse("https://www.example.com/").unwrap(),
@@ -995,7 +995,7 @@ mod tests {
 
     #[test]
     fn rewrite_link_stylesheet_n_1() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         let mut rewriter = HtmlRewrite::new(Rc::new(
             url::Url::parse("https://www.example.com/").unwrap(),
@@ -1013,7 +1013,7 @@ mod tests {
 
     #[test]
     fn rewrite_link_alternate_stylesheet_n_1() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         let mut rewriter = HtmlRewrite::new(Rc::new(
             url::Url::parse("https://www.example.com/").unwrap(),
@@ -1031,7 +1031,7 @@ mod tests {
 
     #[test]
     fn rewrite_link_help_n_1() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         let mut rewriter = HtmlRewrite::new(Rc::new(
             url::Url::parse("https://www.example.com/").unwrap(),
@@ -1047,7 +1047,7 @@ mod tests {
 
     #[test]
     fn rewrite_link_license_n_1() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         let mut rewriter = HtmlRewrite::new(Rc::new(
             url::Url::parse("https://www.example.com/").unwrap(),
@@ -1065,7 +1065,7 @@ mod tests {
 
     #[test]
     fn rewrite_link_alternate_n_1() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         let mut rewriter = HtmlRewrite::new(Rc::new(
             url::Url::parse("https://www.example.com/").unwrap(),
@@ -1083,7 +1083,7 @@ mod tests {
 
     #[test]
     fn rewrite_meta_content_type_n_1() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         let mut rewriter = HtmlRewrite::new(Rc::new(
             url::Url::parse("https://www.example.com/").unwrap(),
@@ -1101,7 +1101,7 @@ mod tests {
 
     #[test]
     fn rewrite_meta_ua_compatible_n_1() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         let mut rewriter = HtmlRewrite::new(Rc::new(
             url::Url::parse("https://www.example.com/").unwrap(),
@@ -1119,7 +1119,7 @@ mod tests {
 
     #[test]
     fn rewrite_meta_refresh_n_1() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         let mut rewriter = HtmlRewrite::new(Rc::new(
             url::Url::parse("https://www.example.com/").unwrap(),
@@ -1137,7 +1137,7 @@ mod tests {
 
     #[test]
     fn rewrite_form_method_get_n_1() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         let mut rewriter = HtmlRewrite::new(Rc::new(
             url::Url::parse("https://www.example.com/").unwrap(),
@@ -1156,7 +1156,7 @@ mod tests {
 
     #[test]
     fn rewrite_form_method_post_n_1() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         let mut rewriter = HtmlRewrite::new(Rc::new(
             url::Url::parse("https://www.example.com/").unwrap(),
@@ -1175,7 +1175,7 @@ mod tests {
 
     #[test]
     fn rewrite_form_no_method_n_1() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         let mut rewriter = HtmlRewrite::new(Rc::new(
             url::Url::parse("https://www.example.com/").unwrap(),
@@ -1191,7 +1191,7 @@ mod tests {
 
     #[test]
     fn rewrite_form_no_action_n_1() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         let mut rewriter = HtmlRewrite::new(Rc::new(
             url::Url::parse("https://www.example.com/").unwrap(),
@@ -1207,7 +1207,7 @@ mod tests {
 
     #[test]
     fn rewrite_valid_width_img_srcset_n_1() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         let mut rewriter = HtmlRewrite::new(Rc::new(
             url::Url::parse("https://www.example.com/").unwrap(),
@@ -1225,7 +1225,7 @@ mod tests {
 
     #[test]
     fn rewrite_valid_width_source_srcset_n_1() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         let mut rewriter = HtmlRewrite::new(Rc::new(
             url::Url::parse("https://www.example.com/").unwrap(),
@@ -1243,7 +1243,7 @@ mod tests {
 
     #[test]
     fn rewrite_valid_density_img_srcset_n_1() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         let mut rewriter = HtmlRewrite::new(Rc::new(
             url::Url::parse("https://www.example.com/").unwrap(),
@@ -1261,7 +1261,7 @@ mod tests {
 
     #[test]
     fn rewrite_valid_density_source_srcset_n_1() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         let mut rewriter = HtmlRewrite::new(Rc::new(
             url::Url::parse("https://www.example.com/").unwrap(),
@@ -1279,7 +1279,7 @@ mod tests {
 
     #[test]
     fn rewrite_valid_data_source_srcset_n1() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         let mut rewriter = HtmlRewrite::new(Rc::new(
             url::Url::parse("https://www.example.com/").unwrap(),
@@ -1297,7 +1297,7 @@ mod tests {
 
     #[test]
     fn rewrite_valid_density_data_source_srcset_n1() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         let mut rewriter = HtmlRewrite::new(Rc::new(
             url::Url::parse("https://www.example.com/").unwrap(),
@@ -1315,7 +1315,7 @@ mod tests {
 
     #[test]
     fn rewrite_invalid_img_srcset_n_1() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         let mut rewriter = HtmlRewrite::new(Rc::new(
             url::Url::parse("https://www.example.com/").unwrap(),
@@ -1333,7 +1333,7 @@ mod tests {
 
     #[test]
     fn rewrite_invalid_source_srcset_n_1() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         let mut rewriter = HtmlRewrite::new(Rc::new(
             url::Url::parse("https://www.example.com/").unwrap(),
@@ -1351,7 +1351,7 @@ mod tests {
 
     #[test]
     fn rewrite_noscript_n_1() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         let mut rewriter = HtmlRewrite::new(Rc::new(
             url::Url::parse("https://www.example.com/").unwrap(),
@@ -1369,7 +1369,7 @@ mod tests {
 
     #[test]
     fn rewrite_noscript_n_3() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         let mut rewriter = HtmlRewrite::new(Rc::new(
             url::Url::parse("https://www.example.com/").unwrap(),
@@ -1387,7 +1387,7 @@ mod tests {
 
     #[test]
     fn rewrite_noscript_style_n_3() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         let mut rewriter = HtmlRewrite::new(Rc::new(
             url::Url::parse("https://www.example.com/").unwrap(),
@@ -1408,7 +1408,7 @@ mod tests {
 
     #[test]
     fn rewrite_head_noscript_n_1() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         let mut rewriter = HtmlRewrite::new(Rc::new(
             url::Url::parse("https://www.example.com/").unwrap(),
@@ -1432,7 +1432,7 @@ mod tests {
 
     #[test]
     fn rewrite_body_noscript_n_1() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         let url = Rc::new(url::Url::parse("https://www.example.com/").unwrap());
 

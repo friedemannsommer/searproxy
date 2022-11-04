@@ -1,6 +1,6 @@
 use futures_util::StreamExt;
 
-use crate::lib::{
+use crate::utilities::{
     rewrite_css::{CssRewrite, RewriteCssError},
     rewrite_html::HtmlRewrite,
     rewrite_html::HtmlRewriteResult,
@@ -30,7 +30,7 @@ pub enum ClientError {
     #[error("UTF-8 decoding failed")]
     Utf8Decode(#[from] std::str::Utf8Error),
     #[error("URL rewriting failed")]
-    UrlRewrite(#[from] crate::lib::rewrite_url::RewriteUrlError),
+    UrlRewrite(#[from] crate::utilities::rewrite_url::RewriteUrlError),
     #[error("HTML rewriting failed")]
     HtmlRewrite(#[from] lol_html::errors::RewritingError),
     #[error("CSS rewriting failed")]
@@ -80,7 +80,7 @@ pub async fn fetch_validate_url(
     use hmac::Mac;
     use std::str::FromStr;
 
-    let mut hmac = match crate::lib::HMAC.get() {
+    let mut hmac = match crate::utilities::HMAC.get() {
         Some(instance) => instance.clone(),
         None => return Err(ClientError::HmacInstance),
     };
@@ -124,7 +124,7 @@ async fn fetch_transform_url(
     acceptable_languages: &str,
     request_body: Option<std::collections::HashMap<String, String>>,
 ) -> Result<FetchResult, ClientError> {
-    let request_client = match crate::lib::REQUEST_CLIENT.get() {
+    let request_client = match crate::utilities::REQUEST_CLIENT.get() {
         Some(client) => client,
         None => return Err(ClientError::RequestClient),
     };

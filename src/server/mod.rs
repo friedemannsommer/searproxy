@@ -5,7 +5,7 @@ mod routes;
 
 #[actix_web::main]
 pub async fn start_http_service() {
-    let config = crate::lib::GLOBAL_CONFIG
+    let config = crate::utilities::GLOBAL_CONFIG
         .get()
         .expect("Global config is not initialized");
     let mut http_server = actix_web::HttpServer::new(move || {

@@ -1,5 +1,5 @@
 use crate::{
-    lib::{ClientError, FormRequest},
+    utilities::{ClientError, FormRequest},
     server::lib::{accepted_languages, fetch_url},
 };
 
@@ -63,7 +63,7 @@ fn get_base_response() -> actix_web::HttpResponse {
 
     response.headers_mut().insert(
         actix_web::http::header::CACHE_CONTROL,
-        crate::lib::HEADER_VALUE_NO_CACHE.clone(),
+        crate::utilities::HEADER_VALUE_NO_CACHE.clone(),
     );
 
     response

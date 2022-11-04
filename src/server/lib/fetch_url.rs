@@ -1,7 +1,7 @@
 use actix_web::http::header::HeaderValue;
 
 use crate::{
-    lib::{fetch_validate_url, ClientRedirect, ClientResponse, FetchResult, FormRequest},
+    utilities::{fetch_validate_url, ClientRedirect, ClientResponse, FetchResult, FormRequest},
     server::lib::get_content_security_policy,
 };
 
@@ -31,8 +31,8 @@ fn handle_client_response(
     client_res: ClientResponse,
 ) -> actix_web::HttpResponse {
     response = response.set_body(match client_res.body {
-        crate::lib::BodyType::Complete(bytes) => actix_web::body::BoxBody::new(bytes),
-        crate::lib::BodyType::Stream(stream) => {
+        crate::utilities::BodyType::Complete(bytes) => actix_web::body::BoxBody::new(bytes),
+        crate::utilities::BodyType::Stream(stream) => {
             actix_web::body::BoxBody::new(actix_web::body::BodyStream::new(stream))
         }
     });
@@ -64,7 +64,7 @@ fn handle_client_redirect(
     let header_value_res = HeaderValue::try_from(client_redirect.internal_url.as_str());
 
     if let Ok(header_value) = header_value_res {
-        if let Some(config) = crate::lib::GLOBAL_CONFIG.get() {
+        if let Some(config) = crate::utilities::GLOBAL_CONFIG.get() {
             if config.follow_redirects {
                 response
                     .headers_mut()

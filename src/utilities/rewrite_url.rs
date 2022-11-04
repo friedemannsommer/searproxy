@@ -27,7 +27,7 @@ pub fn rewrite_url<'url>(
         return Ok(std::borrow::Cow::Borrowed(url));
     }
 
-    let mut hmac = match crate::lib::HMAC.get() {
+    let mut hmac = match crate::utilities::HMAC.get() {
         Some(instance) => instance.clone(),
         None => return Err(RewriteUrlError::HmacInstance),
     };
@@ -64,11 +64,11 @@ pub fn rewrite_url<'url>(
 
 #[cfg(test)]
 mod tests {
-    use crate::lib::rewrite_url::rewrite_url;
+    use crate::utilities::rewrite_url::rewrite_url;
 
     #[test]
     fn rewrite_relative() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         assert_eq!(
             rewrite_url(&url::Url::parse("https://www.example.com").unwrap(), "/index.html")
@@ -79,7 +79,7 @@ mod tests {
 
     #[test]
     fn rewrite_relative_parent() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         assert_eq!(
             rewrite_url(&url::Url::parse("https://www.example.com/home/about").unwrap(), "../index.html")
@@ -90,7 +90,7 @@ mod tests {
 
     #[test]
     fn rewrite_absolute() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         assert_eq!(
             rewrite_url(&url::Url::parse("https://example.com/").unwrap(), "https://www.example.com/")
@@ -101,7 +101,7 @@ mod tests {
 
     #[test]
     fn accept_data_image_png() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         assert_eq!(
             rewrite_url(
@@ -115,7 +115,7 @@ mod tests {
 
     #[test]
     fn accept_data_image_jpg() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         assert_eq!(
             rewrite_url(
@@ -129,7 +129,7 @@ mod tests {
 
     #[test]
     fn reject_data_script() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         assert_eq!(
             rewrite_url(
@@ -143,7 +143,7 @@ mod tests {
 
     #[test]
     fn reject_data_text() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         assert_eq!(
             rewrite_url(
@@ -157,7 +157,7 @@ mod tests {
 
     #[test]
     fn pass_through_fragment_ref() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         assert_eq!(
             rewrite_url(&url::Url::parse("https://example.com/").unwrap(), "#about").unwrap(),
@@ -167,7 +167,7 @@ mod tests {
 
     #[test]
     fn rewrite_prefixed_path_fragment_ref() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         assert_eq!(
             rewrite_url(&url::Url::parse("https://example.com/").unwrap(), "/home/#about").unwrap(),
@@ -177,7 +177,7 @@ mod tests {
 
     #[test]
     fn rewrite_prefixed_fragment_ref() {
-        crate::lib::test_setup_hmac();
+        crate::utilities::test_setup_hmac();
 
         assert_eq!(
             rewrite_url(&url::Url::parse("https://example.com/").unwrap(), "https://another.example.com/#about").unwrap(),

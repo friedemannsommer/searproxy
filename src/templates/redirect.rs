@@ -1,7 +1,7 @@
 use crate::templates::base::{self_ref, Base};
 
 pub fn redirect(
-    client_redirect: crate::lib::ClientRedirect,
+    client_redirect: crate::utilities::ClientRedirect,
 ) -> Base<impl std::fmt::Display + markup::Render, impl std::fmt::Display + markup::Render> {
     let status_code = client_redirect.status_code;
 

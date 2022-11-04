@@ -23,10 +23,10 @@
 #![allow(clippy::multiple_crate_versions)]
 
 mod assets;
-mod lib;
 mod model;
 mod server;
 mod templates;
+mod utilities;
 
 fn main() {
     let config = get_config();
@@ -99,7 +99,7 @@ fn init_logging(config: &model::Config<'_, '_>) {
 fn set_shared_values(config: model::Config<'static, 'static>) {
     use hmac::digest::KeyInit;
 
-    if lib::HMAC
+    if utilities::HMAC
         .set(hmac::Hmac::new_from_slice(config.hmac_secret.as_ref()).expect("Invalid HMAC secret"))
         .is_err()
     {
@@ -127,7 +127,7 @@ fn set_shared_values(config: model::Config<'static, 'static>) {
             .proxy(reqwest::Proxy::all(proxy_address).expect("Can't use given proxy config"));
     }
 
-    lib::REQUEST_CLIENT
+    utilities::REQUEST_CLIENT
         .set(
             request_client_builder
                 .build()
@@ -135,7 +135,7 @@ fn set_shared_values(config: model::Config<'static, 'static>) {
         )
         .expect("Failed to set request client");
 
-    lib::GLOBAL_CONFIG
+    utilities::GLOBAL_CONFIG
         .set(config)
         .expect("Failed to set global config");
 }

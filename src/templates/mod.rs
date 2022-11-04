@@ -8,7 +8,7 @@ pub enum Template<'error_name, 'error_description> {
     Error(Option<crate::server::lib::ErrorMessage<'error_name, 'error_description>>),
     Header(std::rc::Rc<url::Url>),
     Index,
-    Redirect(crate::lib::ClientRedirect),
+    Redirect(crate::utilities::ClientRedirect),
 }
 
 pub fn render_template_string(template: Template<'_, '_>) -> String {

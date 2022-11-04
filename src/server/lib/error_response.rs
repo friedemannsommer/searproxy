@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use crate::lib::ClientError;
+use crate::utilities::ClientError;
 
 #[derive(serde::Serialize)]
 pub struct ErrorMessage<'name, 'description> {
@@ -25,12 +25,12 @@ pub fn get_error_response(error_detail: ClientError) -> actix_web::HttpResponse 
 
     headers.insert(
         actix_web::http::header::CACHE_CONTROL,
-        crate::lib::HEADER_VALUE_NO_CACHE.clone(),
+        crate::utilities::HEADER_VALUE_NO_CACHE.clone(),
     );
 
     headers.insert(
         actix_web::http::header::CONTENT_TYPE,
-        crate::lib::HEADER_VALUE_CONTENT_HTML.clone(),
+        crate::utilities::HEADER_VALUE_CONTENT_HTML.clone(),
     );
 
     response
