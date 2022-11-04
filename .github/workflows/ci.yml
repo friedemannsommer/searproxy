@@ -43,72 +43,54 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Install latest stable
-        uses: actions-rs/toolchain@v1
+      - name: Rust latest stable
+        uses: dtolnay/rust-toolchain@master
         with:
-          profile: minimal
-          override: true
           toolchain: stable
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
       - name: Run tests
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
+        run: cargo test
 
   check:
     name: Check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Install latest stable
-        uses: actions-rs/toolchain@v1
+      - name: Rust latest stable
+        uses: dtolnay/rust-toolchain@master
         with:
-          profile: minimal
-          override: true
           toolchain: stable
-      - uses: Swatinem/rust-cache@v1
-      - name: Run tests
-        uses: actions-rs/cargo@v1
-        with:
-          command: check
+      - uses: Swatinem/rust-cache@v2
+      - name: Run checks
+        run: cargo check
 
   fmt:
     name: Rustfmt
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Install latest stable
-        uses: actions-rs/toolchain@v1
+      - name: Rust latest stable
+        uses: dtolnay/rust-toolchain@master
         with:
-          profile: minimal
-          override: true
-          toolchain: stable
           components: rustfmt
-      - uses: Swatinem/rust-cache@v1
-      - name: Run tests
-        uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check
+          toolchain: stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Check formatting
+        run: cargo fmt --all -- --check
 
   clippy:
     name: Clippy
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Install latest stable
-        uses: actions-rs/toolchain@v1
+      - name: Rust latest stable
+        uses: dtolnay/rust-toolchain@master
         with:
-          profile: minimal
-          override: true
-          toolchain: stable
           components: clippy
-      - uses: Swatinem/rust-cache@v1
-      - name: Run tests
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: -- -D warnings
+          toolchain: stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Run lints
+        run: cargo clippy -- -D warnings
 
   clippy-analyze:
     name: Run rust-clippy analyzing
@@ -119,14 +101,12 @@ jobs:
       security-events: write
     steps:
       - uses: actions/checkout@v3
-      - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
+      - name: Rust latest stable
+        uses: dtolnay/rust-toolchain@master
         with:
-          profile: minimal
-          toolchain: stable
           components: clippy
-          override: true
-      - uses: Swatinem/rust-cache@v1
+          toolchain: stable
+      - uses: Swatinem/rust-cache@v2
       - name: Install required cargo
         run: cargo install clippy-sarif sarif-fmt
       - name: Run rust-clippy
@@ -167,21 +147,18 @@ jobs:
             binary: "searproxy.exe"
     steps:
       - uses: actions/checkout@v3
-      - name: Install latest stable
-        uses: actions-rs/toolchain@v1
+      - name: Rust latest stable
+        uses: dtolnay/rust-toolchain@master
         with:
-          profile: minimal
-          override: true
           toolchain: stable
           target: ${{ matrix.target }}
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
         with:
           key: ${{ matrix.target }}
-      - uses: actions-rs/cargo@v1
-        with:
-          use-cross: true
-          command: build
-          args: --target ${{ matrix.target }} --release
+      - name: install cross
+        run: cargo install cross --git https://github.com/cross-rs/cross
+      - name: compile with cross
+        run: cross build --target ${{ matrix.target }} --release
       - uses: actions/upload-artifact@v3
         with:
           name: "SearProxy_${{ matrix.target }}"
