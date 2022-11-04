@@ -125,10 +125,12 @@ impl<'html> HtmlRewrite<'html> {
                         lol_html::element!("head", Self::append_proxy_styles),
                         lol_html::element!(
                             "img",
-                            Self::transform_img(match crate::utilities::shared::GLOBAL_CONFIG.get() {
-                                Some(config) => config.lazy_images,
-                                _ => false,
-                            })
+                            Self::transform_img(
+                                match crate::utilities::shared::GLOBAL_CONFIG.get() {
+                                    Some(config) => config.lazy_images,
+                                    _ => false,
+                                }
+                            )
                         ),
                         lol_html::element!("img[srcset]", Self::transform_srcset(url.clone())),
                         lol_html::element!("source[srcset]", Self::transform_srcset(url.clone())),

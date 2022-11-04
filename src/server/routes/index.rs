@@ -1,6 +1,6 @@
 use crate::{
-    utilities::{ClientError, FormRequest},
     server::lib::{accepted_languages, fetch_url},
+    utilities::{ClientError, FormRequest},
 };
 
 #[actix_web::get("/")]

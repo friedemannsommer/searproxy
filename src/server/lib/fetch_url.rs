@@ -1,8 +1,8 @@
 use actix_web::http::header::HeaderValue;
 
 use crate::{
-    utilities::{fetch_validate_url, ClientRedirect, ClientResponse, FetchResult, FormRequest},
     server::lib::get_content_security_policy,
+    utilities::{fetch_validate_url, ClientRedirect, ClientResponse, FetchResult, FormRequest},
 };
 
 pub async fn fetch_url(
