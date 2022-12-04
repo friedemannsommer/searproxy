@@ -18,13 +18,11 @@ fn main() {
                 let stylesheet = StyleSheet::parse(
                     file_contents.as_str(),
                     ParserOptions {
-                        css_modules: None,
                         custom_media: false,
                         error_recovery: false,
                         filename: filename.to_string(),
                         nesting: true,
-                        source_index: 0,
-                        warnings: None,
+                        ..ParserOptions::default()
                     },
                 )
                 .unwrap();

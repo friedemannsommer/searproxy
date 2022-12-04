@@ -51,7 +51,7 @@ features = ["std"]
 
 [build-dependencies]
 base64 = "=0.13.1"
-lightningcss = "=1.0.0-alpha.36"
+lightningcss = "=1.0.0-alpha.38"
 
 [build-dependencies.sha2]
 version = "=0.10.6"
