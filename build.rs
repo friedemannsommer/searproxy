@@ -29,11 +29,8 @@ fn main() {
 
                 let minified_stylesheet = stylesheet
                     .to_css(PrinterOptions {
-                        analyze_dependencies: None,
                         minify: true,
-                        pseudo_classes: None,
-                        source_map: None,
-                        targets: None,
+                        ..Default::default()
                     })
                     .unwrap();
                 let mut hasher = Sha256::new();
