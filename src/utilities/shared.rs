@@ -10,6 +10,12 @@ pub static HEADER_VALUE_CONTENT_HTML: once_cell::sync::Lazy<actix_web::http::hea
     once_cell::sync::Lazy::new(|| {
         actix_web::http::header::HeaderValue::from_static(mime::TEXT_HTML_UTF_8.as_ref())
     });
+pub const BASE64_ENGINE: base64::engine::GeneralPurpose = base64::engine::GeneralPurpose::new(
+    &base64::alphabet::STANDARD,
+    base64::engine::GeneralPurposeConfig::new()
+        .with_encode_padding(false)
+        .with_decode_padding_mode(base64::engine::DecodePaddingMode::Indifferent),
+);
 
 #[cfg(test)]
 pub fn test_setup_hmac() {

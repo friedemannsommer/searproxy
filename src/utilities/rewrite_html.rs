@@ -1,10 +1,11 @@
 use std::{cell::RefCell, collections::HashSet, rc::Rc};
 
+use base64::Engine;
 use lol_html::html_content::{Element, EndTag, TextChunk};
 
 use crate::{
     assets::HEADER_STYLESHEET,
-    utilities::{rewrite_css::CssRewrite, rewrite_url::rewrite_url},
+    utilities::{rewrite_css::CssRewrite, rewrite_url::rewrite_url, shared::BASE64_ENGINE},
 };
 
 type CssRewriteRef = Rc<RefCell<Option<CssRewrite>>>;
@@ -283,7 +284,7 @@ impl<'html> HtmlRewrite<'html> {
 
             style_hashes.borrow_mut().push(format!(
                 "'sha256-{}'",
-                base64::encode({
+                BASE64_ENGINE.encode({
                     use sha2::Digest;
 
                     let mut hasher = sha2::Sha256::new();

@@ -22,6 +22,8 @@
 )]
 #![allow(clippy::multiple_crate_versions)]
 
+use base64::Engine;
+
 mod assets;
 mod model;
 mod server;
@@ -45,7 +47,9 @@ fn get_config() -> model::Config<'static, 'static> {
     model::Config {
         follow_redirects: args.follow_redirects,
         hmac_secret: std::borrow::Cow::Owned(
-            base64::decode(&args.hmac_secret).expect("HMAC secret couldn't be [base64] decoded"),
+            utilities::BASE64_ENGINE
+                .decode(&args.hmac_secret)
+                .expect("HMAC secret couldn't be [base64] decoded"),
         ),
         lazy_images: args.lazy_images,
         listen: parse_socket_listener(&args.listen),
