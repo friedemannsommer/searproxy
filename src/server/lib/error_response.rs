@@ -44,7 +44,7 @@ fn get_error_message(error_detail: ClientError) -> Option<ErrorMessage<'static, 
         }),
         ClientError::UnexpectedStatusCode(status_code) => Some(ErrorMessage {
             name: Cow::Borrowed("Unexpected status code"),
-            description: Cow::Owned(format!("Origin returned status code: '{}'", status_code)),
+            description: Cow::Owned(format!("Origin returned status code: '{status_code}'")),
         }),
         ClientError::MimeParse(_) => Some(ErrorMessage {
             name: Cow::Borrowed("Invalid media type"),

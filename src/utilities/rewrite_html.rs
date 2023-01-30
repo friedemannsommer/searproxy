@@ -3,10 +3,7 @@ use std::{cell::RefCell, collections::HashSet, rc::Rc};
 use base64::Engine;
 use lol_html::html_content::{Element, EndTag, TextChunk};
 
-use crate::{
-    assets::HEADER_STYLESHEET,
-    utilities::{rewrite_css::CssRewrite, rewrite_url::rewrite_url, shared::BASE64_ENGINE},
-};
+use crate::utilities::{rewrite_css::CssRewrite, rewrite_url::rewrite_url, shared::BASE64_ENGINE};
 
 type CssRewriteRef = Rc<RefCell<Option<CssRewrite>>>;
 type NoScriptBuffer = Rc<RefCell<String>>;
@@ -49,7 +46,7 @@ static META_EQUIV_REFRESH: once_cell::sync::Lazy<regex::Regex> = once_cell::sync
 });
 
 static HEADER_STYLE_ELEMENT: once_cell::sync::Lazy<String> =
-    once_cell::sync::Lazy::new(|| format!("<style>{}</style>", HEADER_STYLESHEET));
+    once_cell::sync::Lazy::new(|| format!("<style>{}</style>", crate::assets::HEADER_STYLESHEET));
 
 static ALLOWED_ATTRIBUTES: once_cell::sync::Lazy<HashSet<&'static str>> =
     once_cell::sync::Lazy::new(|| {

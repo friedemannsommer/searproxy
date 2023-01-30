@@ -12,8 +12,7 @@ pub fn get_content_security_policy(style_hashes_opt: Option<Vec<String>>) -> Hea
 
     HeaderValue::from_str(
         format!(
-            "default-src 'none'; block-all-mixed-content; img-src data: 'self'; style-src 'self' {}; prefetch-src 'self'; media-src 'self'; frame-src 'self'; font-src 'self'; frame-ancestors 'self'",
-            style_src_hashes
+            "default-src 'none'; block-all-mixed-content; img-src data: 'self'; style-src 'self' {style_src_hashes}; prefetch-src 'self'; media-src 'self'; frame-src 'self'; font-src 'self'; frame-ancestors 'self'"
         ).as_str()
     ).expect("unexpected non ASCII chars in header value")
 }

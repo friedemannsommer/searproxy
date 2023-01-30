@@ -72,7 +72,7 @@ fn parse_socket_listener(input: &str) -> model::SocketListener {
         return model::SocketListener::Unix(path);
     }
 
-    panic!("Listener could not be parsed: '{}'", input)
+    panic!("Listener could not be parsed: '{input}'")
 }
 
 fn init_logging(config: &model::Config<'_, '_>) {
