@@ -1,7 +1,15 @@
 use std::{env, fs, path::PathBuf};
 
+use base64::Engine;
 use lightningcss::stylesheet::{ParserOptions, PrinterOptions, StyleSheet};
 use sha2::{Digest, Sha256};
+
+const BASE64_ENGINE: base64::engine::GeneralPurpose = base64::engine::GeneralPurpose::new(
+    &base64::alphabet::STANDARD,
+    base64::engine::GeneralPurposeConfig::new()
+        .with_encode_padding(false)
+        .with_decode_padding_mode(base64::engine::DecodePaddingMode::Indifferent),
+);
 
 fn main() {
     let out_dir = PathBuf::from(env::var_os("OUT_DIR").unwrap());
@@ -44,7 +52,7 @@ fn main() {
                 filename_path.set_extension("hash");
                 fs::write(
                     out_dir.join(filename_path),
-                    format!("'sha256-{}'", base64::encode(hash.as_slice())),
+                    format!("'sha256-{}'", BASE64_ENGINE.encode(hash.as_slice())),
                 )
                 .unwrap();
             }
