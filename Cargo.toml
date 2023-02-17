@@ -22,7 +22,7 @@ log = "=0.4.17"
 lol_html = "=0.3.2"
 markup = "=0.13.1"
 mime = "=0.3.16"
-once_cell = "=1.17.0"
+once_cell = "=1.17.1"
 regex = "=1.7.1"
 serde = { version = "=1.0.152", features = ["derive"] }
 serde_qs = "=0.11.0"
