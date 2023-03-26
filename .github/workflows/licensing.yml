@@ -14,12 +14,12 @@ on:
 permissions:
   actions: none
   checks: none
-  contents: write
+  contents: read
   deployments: none
-  id-token: none
+  id-token: write
   issues: none
   packages: none
-  pages: none
+  pages: write
   pull-requests: none
   repository-projects: none
   security-events: none
@@ -50,7 +50,8 @@ jobs:
           fi
       - name: Generate third party license overview
         run: cargo-about generate -o docs/licenses.html licensing/about.hbs -c licensing/about.toml
-      - name: Deploy to GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@v4
+      - uses: actions/upload-pages-artifact@v1
         with:
-          folder: docs
+          path: 'docs'
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v2
