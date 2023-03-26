@@ -1,5 +1,6 @@
-pub static HMAC: once_cell::sync::OnceCell<hmac::Hmac<sha2::Sha256>> =
-    once_cell::sync::OnceCell::new();
+pub type HmacInstance = hmac::Hmac<sha2::Sha256>;
+
+pub static HMAC: once_cell::sync::OnceCell<HmacInstance> = once_cell::sync::OnceCell::new();
 pub static REQUEST_CLIENT: once_cell::sync::OnceCell<reqwest::Client> =
     once_cell::sync::OnceCell::new();
 pub static GLOBAL_CONFIG: once_cell::sync::OnceCell<crate::model::Config<'_, '_>> =

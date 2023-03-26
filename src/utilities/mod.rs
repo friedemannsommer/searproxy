@@ -5,8 +5,8 @@ pub use client::{
 #[cfg(test)]
 pub use shared::test_setup_hmac;
 pub use shared::{
-    BASE64_ENGINE, GLOBAL_CONFIG, HEADER_VALUE_CONTENT_HTML, HEADER_VALUE_NO_CACHE, HMAC,
-    REQUEST_CLIENT,
+    HmacInstance, BASE64_ENGINE, GLOBAL_CONFIG, HEADER_VALUE_CONTENT_HTML, HEADER_VALUE_NO_CACHE,
+    HMAC, REQUEST_CLIENT,
 };
 
 mod client;
