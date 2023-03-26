@@ -13,9 +13,7 @@ pub static HEADER_VALUE_CONTENT_HTML: once_cell::sync::Lazy<actix_web::http::hea
     });
 pub const BASE64_ENGINE: base64::engine::GeneralPurpose = base64::engine::GeneralPurpose::new(
     &base64::alphabet::STANDARD,
-    base64::engine::GeneralPurposeConfig::new()
-        .with_encode_padding(false)
-        .with_decode_padding_mode(base64::engine::DecodePaddingMode::Indifferent),
+    base64::engine::GeneralPurposeConfig::new(),
 );
 
 #[cfg(test)]

@@ -6,9 +6,7 @@ use sha2::{Digest, Sha256};
 
 const BASE64_ENGINE: base64::engine::GeneralPurpose = base64::engine::GeneralPurpose::new(
     &base64::alphabet::STANDARD,
-    base64::engine::GeneralPurposeConfig::new()
-        .with_encode_padding(false)
-        .with_decode_padding_mode(base64::engine::DecodePaddingMode::Indifferent),
+    base64::engine::GeneralPurposeConfig::new(),
 );
 
 fn main() {
@@ -41,11 +39,8 @@ fn main() {
                         ..Default::default()
                     })
                     .unwrap();
-                let mut hasher = Sha256::new();
 
-                hasher.update(&minified_stylesheet.code);
-
-                let hash = hasher.finalize();
+                let hash = Sha256::digest(&minified_stylesheet.code);
                 let mut filename_path = PathBuf::from(filename);
 
                 fs::write(out_dir.join(&filename_path), minified_stylesheet.code).unwrap();
