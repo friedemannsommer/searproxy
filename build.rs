@@ -59,7 +59,6 @@ fn main() {
         }
     }
 
-    println!("cargo:rerun-if-changed=build.rs");
     println!(
         "cargo:rerun-if-changed={}",
         asset_dir.as_os_str().to_str().unwrap()
