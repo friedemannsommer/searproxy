@@ -542,11 +542,11 @@ impl<'html> HtmlRewrite<'html> {
     }
 
     fn html_entity_decode(value: &str) -> String {
-        let mut result = String::with_capacity(value.len());
+        let mut output = Vec::<u8>::with_capacity(value.len());
 
-        htmlentity::entity::decode_to(value, &mut result);
+        htmlentity::entity::decode_to(value.as_bytes(), &mut output);
 
-        result
+        String::from_utf8(output).unwrap_or_default()
     }
 }
 
