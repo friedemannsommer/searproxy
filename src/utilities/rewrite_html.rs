@@ -261,10 +261,13 @@ impl<'html> HtmlRewrite<'html> {
     {
         move |element: &mut Element<'_, '_>| {
             css_rewriter.replace(Some(CssRewrite::new(base_url.clone())));
-            element.on_end_tag(Self::flush_style(
-                css_rewriter.clone(),
-                style_hashes.clone(),
-            ))?;
+
+            if let Some(end_tag_handlers) = element.end_tag_handlers() {
+                end_tag_handlers.push(Box::new(Self::flush_style(
+                    css_rewriter.clone(),
+                    style_hashes.clone(),
+                )));
+            }
 
             Ok(())
         }
@@ -415,11 +418,14 @@ impl<'html> HtmlRewrite<'html> {
     ) -> impl Fn(&mut Element<'_, '_>) -> Result<(), Box<dyn std::error::Error + Send + Sync>> + 'html
     {
         move |element| {
-            element.on_end_tag(Self::flush_noscript_content(
-                base_url.clone(),
-                noscript_buf.clone(),
-                style_hashes.clone(),
-            ))?;
+            if let Some(end_tag_handlers) = element.end_tag_handlers() {
+                end_tag_handlers.push(Box::new(Self::flush_noscript_content(
+                    base_url.clone(),
+                    noscript_buf.clone(),
+                    style_hashes.clone(),
+                )));
+            }
+
             element.remove();
 
             Ok(())
