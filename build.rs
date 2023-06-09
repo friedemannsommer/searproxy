@@ -24,10 +24,8 @@ fn main() {
                 let stylesheet = StyleSheet::parse(
                     file_contents.as_str(),
                     ParserOptions {
-                        custom_media: false,
                         error_recovery: false,
                         filename: filename.to_string(),
-                        nesting: true,
                         ..ParserOptions::default()
                     },
                 )
