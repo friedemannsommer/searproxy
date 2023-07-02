@@ -1202,9 +1202,9 @@ checksum = "f92be4933c13fd498862a9e02a3055f8a8d9c039ce33db97306fd5a6caa7f29b"
 
 [[package]]
 name = "lightningcss"
-version = "1.0.0-alpha.42"
+version = "1.0.0-alpha.44"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a00aabc173bdf67a26da17777a5584ae344238b043626b5eb1c6b137af9c9edb"
+checksum = "97cc864b2dc5f078725908d7be7b35ce934e156ff52db40643ba6cb55f813c14"
 dependencies = [
  "ahash 0.7.6",
  "bitflags 2.3.1",
