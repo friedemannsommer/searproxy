@@ -1,5 +1,7 @@
 use std::borrow::Cow;
 
+use crate::model::ip_range::PermittedIpRange;
+
 #[derive(Debug)]
 pub enum SocketListener {
     Tcp(std::net::SocketAddr),
@@ -14,6 +16,7 @@ pub struct Config<'secret, 'proxy> {
     pub lazy_images: bool,
     pub listen: SocketListener,
     pub log_level: log::LevelFilter,
+    pub permitted_ip_range: PermittedIpRange,
     pub proxy_address: Option<Cow<'proxy, str>>,
     pub request_timeout: u8,
     pub worker_count: u8,

@@ -56,6 +56,7 @@ fn get_config() -> model::Config<'static, 'static> {
         lazy_images: args.lazy_images,
         listen: parse_socket_listener(&args.listen),
         log_level: args.log_level,
+        permitted_ip_range: args.permitted_ip_range,
         request_timeout: args.request_timeout,
         proxy_address: args.proxy_address.map(std::borrow::Cow::Owned),
         worker_count: args.worker_count,

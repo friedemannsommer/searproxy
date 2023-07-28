@@ -1,19 +1,25 @@
+use std::net::{Ipv4Addr, Ipv6Addr};
+
 use futures_util::StreamExt;
 
-use crate::utilities::{
-    rewrite_css::{CssRewrite, RewriteCssError},
-    rewrite_html::HtmlRewrite,
-    rewrite_html::HtmlRewriteResult,
-    rewrite_url::rewrite_url,
+use crate::{
+    model::{Config, PermittedIpRange},
+    utilities::{
+        rewrite_css::{CssRewrite, RewriteCssError},
+        rewrite_html::HtmlRewrite,
+        rewrite_html::HtmlRewriteResult,
+        rewrite_url::rewrite_url,
+        GLOBAL_CONFIG,
+    },
 };
 
 #[derive(thiserror::Error, Debug)]
 pub enum ClientError {
     #[error("HMAC instance uninitialized")]
     HmacInstance,
-    #[error("hex decode failed")]
+    #[error("Hex decode failed")]
     Hex(#[from] hex::FromHexError),
-    #[error("request client is uninitialized")]
+    #[error("Request client is uninitialized")]
     RequestClient,
     #[error("HTTP request failed")]
     Request(#[from] reqwest::Error),
@@ -37,8 +43,10 @@ pub enum ClientError {
     CssRewrite(#[from] RewriteCssError),
     #[error("Server will not process the request due to a client error")]
     BadRequest,
-    #[error("Server returned 3XX status code without 'Location' header")]
+    #[error("Server returned 3XX status code without a 'Location' header")]
     RedirectWithoutLocation,
+    #[error("The IP `{0}` is not within the permitted range(s)")]
+    IpRangeDenied(String),
 }
 
 pub enum FetchResult {
@@ -84,19 +92,20 @@ pub async fn fetch_validate_url(
         Some(instance) => instance.clone(),
         None => return Err(ClientError::HmacInstance),
     };
-    let mut request_body: Option<std::collections::HashMap<String, String>> = None;
     let mut next_url = url::Url::from_str(url)?;
-    let method = match request_body_opt {
+
+    validate_request_host(&next_url)?;
+
+    let (method, request_body) = match request_body_opt {
         Some(payload) => {
             if payload.method == reqwest::Method::POST {
-                request_body = Some(payload.body);
+                (payload.method, Some(payload.body))
             } else {
                 append_form_params(&mut next_url, payload.body);
+                (payload.method, None)
             }
-
-            payload.method
         }
-        None => reqwest::Method::GET,
+        None => (reqwest::Method::GET, None),
     };
     let hash_bytes = hex::decode(hash)?;
 
@@ -224,4 +233,64 @@ async fn transform_css(response: reqwest::Response) -> Result<bytes::Bytes, Clie
     }
 
     Ok(bytes::Bytes::from(rewriter.end()?))
+}
+
+fn validate_request_host(url: &url::Url) -> Result<(), ClientError> {
+    if let Some(config) = GLOBAL_CONFIG.get() {
+        if let Some(host) = url.host() {
+            return match host {
+                url::Host::Ipv4(ip_v4) => verify_ip_v4_range(config, ip_v4),
+                url::Host::Ipv6(ip_v6) => verify_ip_v6_range(config, ip_v6),
+                _ => Ok(()),
+            };
+        }
+    }
+
+    Ok(())
+}
+
+fn verify_ip_v4_range(config: &Config<'_, '_>, ip: Ipv4Addr) -> Result<(), ClientError> {
+    match config.permitted_ip_range {
+        PermittedIpRange::None => Err(ClientError::IpRangeDenied(ip.to_string())),
+        PermittedIpRange::Global => {
+            if ip.is_link_local()
+                || ip.is_broadcast()
+                || ip.is_loopback()
+                || ip.is_private()
+                || ip.is_unspecified()
+            {
+                Err(ClientError::IpRangeDenied(ip.to_string()))
+            } else {
+                Ok(())
+            }
+        }
+        PermittedIpRange::Private => {
+            if ip.is_link_local() || ip.is_broadcast() || ip.is_loopback() || ip.is_unspecified() {
+                Err(ClientError::IpRangeDenied(ip.to_string()))
+            } else {
+                Ok(())
+            }
+        }
+        PermittedIpRange::Local => {
+            if ip.is_link_local() || ip.is_broadcast() {
+                Err(ClientError::IpRangeDenied(ip.to_string()))
+            } else {
+                Ok(())
+            }
+        }
+    }
+}
+
+fn verify_ip_v6_range(config: &Config<'_, '_>, ip: Ipv6Addr) -> Result<(), ClientError> {
+    match config.permitted_ip_range {
+        PermittedIpRange::None => Err(ClientError::IpRangeDenied(ip.to_string())),
+        PermittedIpRange::Global | PermittedIpRange::Private => {
+            if ip.is_loopback() || ip.is_unspecified() {
+                Err(ClientError::IpRangeDenied(ip.to_string()))
+            } else {
+                Ok(())
+            }
+        }
+        PermittedIpRange::Local => Ok(()),
+    }
 }
