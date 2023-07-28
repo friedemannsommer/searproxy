@@ -1,19 +1,25 @@
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, ToSocketAddrs};
+
 use futures_util::StreamExt;
 
-use crate::utilities::{
-    rewrite_css::{CssRewrite, RewriteCssError},
-    rewrite_html::HtmlRewrite,
-    rewrite_html::HtmlRewriteResult,
-    rewrite_url::rewrite_url,
+use crate::{
+    model::PermittedIpRange,
+    utilities::{
+        rewrite_css::{CssRewrite, RewriteCssError},
+        rewrite_html::HtmlRewrite,
+        rewrite_html::HtmlRewriteResult,
+        rewrite_url::rewrite_url,
+        GLOBAL_CONFIG,
+    },
 };
 
 #[derive(thiserror::Error, Debug)]
 pub enum ClientError {
     #[error("HMAC instance uninitialized")]
     HmacInstance,
-    #[error("hex decode failed")]
+    #[error("Hex decode failed")]
     Hex(#[from] hex::FromHexError),
-    #[error("request client is uninitialized")]
+    #[error("Request client is uninitialized")]
     RequestClient,
     #[error("HTTP request failed")]
     Request(#[from] reqwest::Error),
@@ -37,8 +43,12 @@ pub enum ClientError {
     CssRewrite(#[from] RewriteCssError),
     #[error("Server will not process the request due to a client error")]
     BadRequest,
-    #[error("Server returned 3XX status code without 'Location' header")]
+    #[error("Server returned 3XX status code without a 'Location' header")]
     RedirectWithoutLocation,
+    #[error("The IP `{0}` is not within the permitted range(s)")]
+    IpRangeDenied(String),
+    #[error("Can't resolve hostname `{0}`")]
+    ResolveHostname(String),
 }
 
 pub enum FetchResult {
@@ -84,19 +94,20 @@ pub async fn fetch_validate_url(
         Some(instance) => instance.clone(),
         None => return Err(ClientError::HmacInstance),
     };
-    let mut request_body: Option<std::collections::HashMap<String, String>> = None;
     let mut next_url = url::Url::from_str(url)?;
-    let method = match request_body_opt {
+
+    validate_request_host(&next_url)?;
+
+    let (method, request_body) = match request_body_opt {
         Some(payload) => {
             if payload.method == reqwest::Method::POST {
-                request_body = Some(payload.body);
+                (payload.method, Some(payload.body))
             } else {
                 append_form_params(&mut next_url, payload.body);
+                (payload.method, None)
             }
-
-            payload.method
         }
-        None => reqwest::Method::GET,
+        None => (reqwest::Method::GET, None),
     };
     let hash_bytes = hex::decode(hash)?;
 
@@ -224,4 +235,243 @@ async fn transform_css(response: reqwest::Response) -> Result<bytes::Bytes, Clie
     }
 
     Ok(bytes::Bytes::from(rewriter.end()?))
+}
+
+fn validate_request_host(url: &url::Url) -> Result<(), ClientError> {
+    if let Some(config) = GLOBAL_CONFIG.get() {
+        if let Some(host) = url.host() {
+            return match host {
+                url::Host::Ipv4(ip_v4) => verify_ip_v4_range(config.permitted_ip_range, ip_v4),
+                url::Host::Ipv6(ip_v6) => verify_ip_v6_range(config.permitted_ip_range, ip_v6),
+                url::Host::Domain(hostname) => verify_hostname(config.permitted_ip_range, hostname),
+            };
+        }
+    }
+
+    Ok(())
+}
+
+fn verify_ip_v4_range(
+    permitted_ip_range: PermittedIpRange,
+    ip: Ipv4Addr,
+) -> Result<(), ClientError> {
+    match permitted_ip_range {
+        PermittedIpRange::None => Err(ClientError::IpRangeDenied(ip.to_string())),
+        PermittedIpRange::Global => {
+            if ip.is_link_local()
+                || ip.is_broadcast()
+                || ip.is_loopback()
+                || ip.is_private()
+                || ip.is_unspecified()
+            {
+                Err(ClientError::IpRangeDenied(ip.to_string()))
+            } else {
+                Ok(())
+            }
+        }
+        PermittedIpRange::Private => {
+            if ip.is_link_local() || ip.is_broadcast() || ip.is_loopback() || ip.is_unspecified() {
+                Err(ClientError::IpRangeDenied(ip.to_string()))
+            } else {
+                Ok(())
+            }
+        }
+        PermittedIpRange::Local => {
+            if ip.is_link_local() || ip.is_broadcast() {
+                Err(ClientError::IpRangeDenied(ip.to_string()))
+            } else {
+                Ok(())
+            }
+        }
+    }
+}
+
+fn verify_ip_v6_range(
+    permitted_ip_range: PermittedIpRange,
+    ip: Ipv6Addr,
+) -> Result<(), ClientError> {
+    match permitted_ip_range {
+        PermittedIpRange::None => Err(ClientError::IpRangeDenied(ip.to_string())),
+        PermittedIpRange::Global | PermittedIpRange::Private => {
+            if ip.is_loopback() || ip.is_unspecified() {
+                Err(ClientError::IpRangeDenied(ip.to_string()))
+            } else {
+                Ok(())
+            }
+        }
+        PermittedIpRange::Local => Ok(()),
+    }
+}
+
+fn verify_hostname(
+    permitted_ip_range: PermittedIpRange,
+    hostname: &str,
+) -> Result<(), ClientError> {
+    let ip_addr = if let Some(socket_addr) = (hostname, 80)
+        .to_socket_addrs()
+        .map_err(|err| {
+            log::warn!("Couldn't resolve domain name `{hostname}`, with reason: {err}");
+            ClientError::ResolveHostname(hostname.to_string())
+        })?
+        .next()
+    {
+        socket_addr.ip()
+    } else {
+        return Err(ClientError::ResolveHostname(hostname.to_string()));
+    };
+
+    match ip_addr {
+        IpAddr::V4(ip_v4) => verify_ip_v4_range(permitted_ip_range, ip_v4),
+        IpAddr::V6(ip_v6) => verify_ip_v6_range(permitted_ip_range, ip_v6),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::net::{Ipv4Addr, Ipv6Addr};
+
+    use crate::model::PermittedIpRange;
+
+    use super::{verify_ip_v4_range, verify_ip_v6_range};
+
+    const IP_V4_DENIED_IP_LIST: [Ipv4Addr; 2] = [
+        Ipv4Addr::new(169, 254, 0, 0),
+        Ipv4Addr::new(255, 255, 255, 255),
+    ];
+
+    const IP_V4_GLOBAL_IP_LIST: [Ipv4Addr; 5] = [
+        Ipv4Addr::new(1, 1, 1, 1),
+        Ipv4Addr::new(1, 0, 0, 1),
+        Ipv4Addr::new(8, 8, 8, 8),
+        Ipv4Addr::new(8, 8, 4, 4),
+        Ipv4Addr::new(9, 9, 9, 9),
+    ];
+
+    const IP_V4_PRIVATE_IP_LIST: [Ipv4Addr; 7] = [
+        Ipv4Addr::new(10, 0, 0, 1),
+        Ipv4Addr::new(10, 1, 0, 1),
+        Ipv4Addr::new(10, 10, 0, 1),
+        Ipv4Addr::new(172, 16, 0, 1),
+        Ipv4Addr::new(172, 20, 0, 1),
+        Ipv4Addr::new(192, 168, 0, 1),
+        Ipv4Addr::new(192, 168, 1, 1),
+    ];
+
+    const IP_V4_LOCAL_IP_LIST: [Ipv4Addr; 7] = [
+        Ipv4Addr::new(127, 0, 0, 1),
+        Ipv4Addr::new(127, 1, 0, 1),
+        Ipv4Addr::new(127, 10, 0, 1),
+        Ipv4Addr::new(127, 16, 0, 1),
+        Ipv4Addr::new(127, 20, 0, 1),
+        Ipv4Addr::new(127, 168, 0, 1),
+        Ipv4Addr::new(127, 200, 1, 1),
+    ];
+
+    #[test]
+    fn ip_v4_range_none() {
+        assert!(verify_ip_v4_range(PermittedIpRange::None, Ipv4Addr::UNSPECIFIED).is_err());
+
+        for ip in IP_V4_DENIED_IP_LIST {
+            assert!(verify_ip_v4_range(PermittedIpRange::None, ip).is_err());
+        }
+
+        for ip in IP_V4_GLOBAL_IP_LIST {
+            assert!(verify_ip_v4_range(PermittedIpRange::None, ip).is_err());
+        }
+
+        for ip in IP_V4_PRIVATE_IP_LIST {
+            assert!(verify_ip_v4_range(PermittedIpRange::None, ip).is_err());
+        }
+
+        for ip in IP_V4_LOCAL_IP_LIST {
+            assert!(verify_ip_v4_range(PermittedIpRange::None, ip).is_err());
+        }
+    }
+
+    #[test]
+    fn ip_v4_range_global() {
+        assert!(verify_ip_v4_range(PermittedIpRange::Global, Ipv4Addr::UNSPECIFIED).is_err());
+
+        for ip in IP_V4_DENIED_IP_LIST {
+            assert!(verify_ip_v4_range(PermittedIpRange::Global, ip).is_err());
+        }
+
+        for ip in IP_V4_GLOBAL_IP_LIST {
+            assert!(verify_ip_v4_range(PermittedIpRange::Global, ip).is_ok());
+        }
+
+        for ip in IP_V4_PRIVATE_IP_LIST {
+            assert!(verify_ip_v4_range(PermittedIpRange::Global, ip).is_err());
+        }
+
+        for ip in IP_V4_LOCAL_IP_LIST {
+            assert!(verify_ip_v4_range(PermittedIpRange::Global, ip).is_err());
+        }
+    }
+
+    #[test]
+    fn ip_v4_range_private() {
+        assert!(verify_ip_v4_range(PermittedIpRange::Private, Ipv4Addr::UNSPECIFIED).is_err());
+
+        for ip in IP_V4_DENIED_IP_LIST {
+            assert!(verify_ip_v4_range(PermittedIpRange::Private, ip).is_err());
+        }
+
+        for ip in IP_V4_GLOBAL_IP_LIST {
+            assert!(verify_ip_v4_range(PermittedIpRange::Private, ip).is_ok());
+        }
+
+        for ip in IP_V4_PRIVATE_IP_LIST {
+            assert!(verify_ip_v4_range(PermittedIpRange::Private, ip).is_ok());
+        }
+
+        for ip in IP_V4_LOCAL_IP_LIST {
+            assert!(verify_ip_v4_range(PermittedIpRange::Private, ip).is_err());
+        }
+    }
+
+    #[test]
+    fn ip_v4_range_local() {
+        assert!(verify_ip_v4_range(PermittedIpRange::Local, Ipv4Addr::UNSPECIFIED).is_ok());
+
+        for ip in IP_V4_DENIED_IP_LIST {
+            assert!(verify_ip_v4_range(PermittedIpRange::Local, ip).is_err());
+        }
+
+        for ip in IP_V4_GLOBAL_IP_LIST {
+            assert!(verify_ip_v4_range(PermittedIpRange::Local, ip).is_ok());
+        }
+
+        for ip in IP_V4_PRIVATE_IP_LIST {
+            assert!(verify_ip_v4_range(PermittedIpRange::Local, ip).is_ok());
+        }
+
+        for ip in IP_V4_LOCAL_IP_LIST {
+            assert!(verify_ip_v4_range(PermittedIpRange::Local, ip).is_ok());
+        }
+    }
+
+    #[test]
+    fn ip_v6_range_none() {
+        assert!(verify_ip_v6_range(PermittedIpRange::None, Ipv6Addr::UNSPECIFIED).is_err());
+        assert!(verify_ip_v6_range(PermittedIpRange::None, Ipv6Addr::LOCALHOST).is_err());
+    }
+
+    #[test]
+    fn ip_v6_range_global() {
+        assert!(verify_ip_v6_range(PermittedIpRange::Global, Ipv6Addr::UNSPECIFIED).is_err());
+        assert!(verify_ip_v6_range(PermittedIpRange::Global, Ipv6Addr::LOCALHOST).is_err());
+    }
+
+    #[test]
+    fn ip_v6_range_private() {
+        assert!(verify_ip_v6_range(PermittedIpRange::Private, Ipv6Addr::UNSPECIFIED).is_err());
+        assert!(verify_ip_v6_range(PermittedIpRange::Private, Ipv6Addr::LOCALHOST).is_err());
+    }
+
+    #[test]
+    fn ip_v6_range_local() {
+        assert!(verify_ip_v6_range(PermittedIpRange::Local, Ipv6Addr::UNSPECIFIED).is_ok());
+        assert!(verify_ip_v6_range(PermittedIpRange::Local, Ipv6Addr::LOCALHOST).is_ok());
+    }
 }
