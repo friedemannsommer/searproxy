@@ -20,6 +20,7 @@ searproxy [OPTIONS] --hmac-secret <HMAC_SECRET> --listen <LISTEN_ADDRESS>
 * `-t` / `--request-timeout` - Timeout in seconds to wait for a request to complete (default: 5s)
 * `-v` / `--log-level` - Log level to use (default: WARN)
 * `-w` / `--worker-count` - Worker thread count for handling incoming HTTP requests (default: CPU core count)
+* `-r` / `--permitted-ip-range` - Permitted IP (v4, v6) ranges (default: "none")
 * `-h` / `--help` - Print help information
 * `-V` / `--version` - Print version information
 
@@ -35,6 +36,7 @@ searproxy [OPTIONS] --hmac-secret <HMAC_SECRET> --listen <LISTEN_ADDRESS>
 * `SEARPROXY_REQUEST_TIMEOUT` - Timeout in seconds to wait for a request to complete (default: 5s)
 * `SEARPROXY_LOG_LEVEL` - Log level to use (default: WARN)
 * `SEARPROXY_WORKER_COUNT` - Worker thread count for handling incoming HTTP requests (default: CPU core count)
+* `SEARPROXY_PERMITTED_IP_RANGE` - Permitted IP (v4, v6) ranges (default: "none")
 
 ## Open source licenses
 
