@@ -12,9 +12,10 @@ pub fn get_error_response(error_detail: ClientError) -> actix_web::HttpResponse 
     let mut response = actix_web::HttpResponse::with_body(
         match error_detail {
             ClientError::InvalidHash => actix_web::http::StatusCode::UNAUTHORIZED,
-            ClientError::Hex(_) | ClientError::BadRequest => {
-                actix_web::http::StatusCode::BAD_REQUEST
-            }
+            ClientError::Hex(_)
+            | ClientError::BadRequest
+            | ClientError::IpRangeDenied(_)
+            | ClientError::ResolveHostname(_) => actix_web::http::StatusCode::BAD_REQUEST,
             _ => actix_web::http::StatusCode::INTERNAL_SERVER_ERROR,
         },
         actix_web::body::BoxBody::new(crate::templates::render_template_string(
@@ -61,6 +62,18 @@ fn get_error_message(error_detail: ClientError) -> Option<ErrorMessage<'static, 
         ClientError::RedirectWithoutLocation => Some(ErrorMessage {
             name: Cow::Borrowed("Invalid redirect"),
             description: Cow::Owned(error_detail.to_string()),
+        }),
+        ClientError::IpRangeDenied(host) => Some(ErrorMessage {
+            name: Cow::Borrowed("Request denied"),
+            description: Cow::Owned(format!(
+                "The requested host \"{host}\" is not permitted by the service provider."
+            )),
+        }),
+        ClientError::ResolveHostname(host) => Some(ErrorMessage {
+            name: Cow::Borrowed("Unknown host"),
+            description: Cow::Owned(format!(
+                "The requested host \"{host}\" couldn't be resolved."
+            )),
         }),
         _ => None,
     }

@@ -3,7 +3,7 @@ use std::{
     str::FromStr,
 };
 
-#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub enum PermittedIpRange {
     None,
     Global,
@@ -34,9 +34,9 @@ impl FromStr for PermittedIpRange {
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         Ok(match value {
             "none" => PermittedIpRange::None,
-            "local" => PermittedIpRange::Local,
-            "private" => PermittedIpRange::Private,
             "global" => PermittedIpRange::Global,
+            "private" => PermittedIpRange::Private,
+            "local" => PermittedIpRange::Local,
             _ => return Err(IpRangeParseError::Unrecognized(String::from(value))),
         })
     }
