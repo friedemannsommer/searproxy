@@ -43,7 +43,7 @@ pub struct Cli {
     pub log_level: log::LevelFilter,
     /// Permitted IP (v4, v6) ranges
     /// Possible values include: "none", "global", "private", "local".
-    #[clap(short = 'r', long, env = "SEARPROXY_PERMITTED_IP_RANGE", default_value_t = PermittedIpRange::None)]
+    #[clap(short = 'r', long, env = "SEARPROXY_PERMITTED_IP_RANGE", default_value_t = PermittedIpRange::Global)]
     pub permitted_ip_range: PermittedIpRange,
     /// Use a HTTP(s) / SOCKS5 proxy for outgoing HTTP(s) requests.
     /// Examples: "http://exam.ple", "https://exam.ple", "socks5://exam.ple", "socks5h://exam.ple"
