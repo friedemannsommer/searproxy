@@ -2,17 +2,20 @@ use actix_web::http::header::HeaderValue;
 
 use crate::{
     server::lib::get_content_security_policy,
-    utilities::{fetch_validate_url, ClientRedirect, ClientResponse, FetchResult, FormRequest},
+    utilities::{
+        fetch_validate_url, ClientRedirect, ClientResponse, ClientResponseBody, FetchResult,
+        FormRequest,
+    },
 };
 
 pub async fn fetch_url(
-    response: actix_web::HttpResponse,
+    response: actix_web::HttpResponse<ClientResponseBody>,
     url: &str,
     hash: &str,
-    languages: &str,
+    headers: &actix_web::http::header::HeaderMap,
     request_body: Option<FormRequest>,
-) -> actix_web::HttpResponse {
-    match fetch_validate_url(url, hash, languages, request_body).await {
+) -> actix_web::HttpResponse<ClientResponseBody> {
+    match fetch_validate_url(url, hash, headers, request_body).await {
         Ok(fetch_result) => match fetch_result {
             FetchResult::Response(client_res) => handle_client_response(response, client_res),
             FetchResult::Redirect(client_redirect) => {
@@ -27,14 +30,22 @@ pub async fn fetch_url(
 }
 
 fn handle_client_response(
-    mut response: actix_web::HttpResponse,
+    mut response: actix_web::HttpResponse<ClientResponseBody>,
     client_res: ClientResponse,
-) -> actix_web::HttpResponse {
+) -> actix_web::HttpResponse<ClientResponseBody> {
     response = response.set_body(match client_res.body {
-        crate::utilities::BodyType::Complete(bytes) => actix_web::body::BoxBody::new(bytes),
-        crate::utilities::BodyType::Stream(stream) => {
-            actix_web::body::BoxBody::new(actix_web::body::BodyStream::new(stream))
-        }
+        crate::utilities::BodyType::Complete(body) => actix_web::body::EitherBody::Right { body },
+        crate::utilities::BodyType::Stream(stream) => actix_web::body::EitherBody::Left {
+            body: if let Some(body_size) = client_res.content_length {
+                actix_web::body::EitherBody::Left {
+                    body: actix_web::body::SizedStream::new(body_size, stream),
+                }
+            } else {
+                actix_web::body::EitherBody::Right {
+                    body: actix_web::body::BodyStream::new(stream),
+                }
+            },
+        },
     });
 
     let headers = response.headers_mut();
@@ -58,9 +69,9 @@ fn handle_client_response(
 }
 
 fn handle_client_redirect(
-    mut response: actix_web::HttpResponse,
+    mut response: actix_web::HttpResponse<ClientResponseBody>,
     client_redirect: ClientRedirect,
-) -> actix_web::HttpResponse {
+) -> actix_web::HttpResponse<ClientResponseBody> {
     let header_value_res = HeaderValue::try_from(client_redirect.internal_url.as_str());
 
     if let Ok(header_value) = header_value_res {
@@ -79,11 +90,11 @@ fn handle_client_redirect(
         actix_web::http::header::CONTENT_TYPE,
         HeaderValue::from_static(mime::TEXT_HTML_UTF_8.as_ref()),
     );
-    response = response.set_body(actix_web::body::BoxBody::new(
-        crate::templates::render_template_string(crate::templates::Template::Redirect(
-            client_redirect,
+    response = response.set_body(actix_web::body::EitherBody::Right {
+        body: bytes::Bytes::from(crate::templates::render_template_string(
+            crate::templates::Template::Redirect(client_redirect),
         )),
-    ));
+    });
 
     response
 }

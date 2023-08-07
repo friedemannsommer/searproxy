@@ -13,6 +13,17 @@ use crate::{
     },
 };
 
+pub type ClientResponseStream =
+    std::pin::Pin<Box<dyn futures_util::Stream<Item = Result<bytes::Bytes, reqwest::Error>>>>;
+
+pub type ClientResponseBody = actix_web::body::EitherBody<
+    actix_web::body::EitherBody<
+        actix_web::body::SizedStream<ClientResponseStream>,
+        actix_web::body::BodyStream<ClientResponseStream>,
+    >,
+    bytes::Bytes,
+>;
+
 #[derive(thiserror::Error, Debug)]
 pub enum ClientError {
     #[error("HMAC instance uninitialized")]
@@ -71,6 +82,7 @@ pub struct FormRequest {
 pub struct ClientResponse {
     pub body: BodyType,
     pub content_disposition: Option<reqwest::header::HeaderValue>,
+    pub content_length: Option<u64>,
     pub content_type: mime::Mime,
     pub style_hashes: Option<Vec<String>>,
 }
@@ -81,10 +93,13 @@ pub struct ClientRedirect {
     pub status_code: reqwest::StatusCode,
 }
 
+static FALLBACK_ACCEPT_LANGUAGE: actix_web::http::header::HeaderValue =
+    actix_web::http::header::HeaderValue::from_static("en");
+
 pub async fn fetch_validate_url(
     url: &str,
     hash: &str,
-    acceptable_languages: &str,
+    headers: &actix_web::http::header::HeaderMap,
     request_body_opt: Option<FormRequest>,
 ) -> Result<FetchResult, ClientError> {
     use hmac::Mac;
@@ -115,7 +130,7 @@ pub async fn fetch_validate_url(
 
     if hmac.verify_slice(&hash_bytes).is_ok() {
         log::debug!("{} '{}'", method, next_url.as_str());
-        return fetch_transform_url(method, next_url, acceptable_languages, request_body).await;
+        return fetch_transform_url(method, next_url, headers, request_body).await;
     }
 
     if log::log_enabled!(log::Level::Info) {
@@ -132,7 +147,7 @@ pub async fn fetch_validate_url(
 async fn fetch_transform_url(
     method: reqwest::Method,
     url: url::Url,
-    acceptable_languages: &str,
+    headers: &actix_web::http::header::HeaderMap,
     request_body: Option<std::collections::HashMap<String, String>>,
 ) -> Result<FetchResult, ClientError> {
     let request_client = match crate::utilities::REQUEST_CLIENT.get() {
@@ -142,7 +157,16 @@ async fn fetch_transform_url(
     let mut request = request_client
         .request(method, url.clone())
         .header(reqwest::header::ACCEPT, "*/*")
-        .header(reqwest::header::ACCEPT_LANGUAGE, acceptable_languages);
+        .header(
+            reqwest::header::ACCEPT_LANGUAGE,
+            headers
+                .get(actix_web::http::header::ACCEPT_LANGUAGE)
+                .unwrap_or(&FALLBACK_ACCEPT_LANGUAGE),
+        );
+
+    if let Some(range) = headers.get(actix_web::http::header::RANGE) {
+        request = request.header(reqwest::header::RANGE, range)
+    }
 
     if let Some(payload) = request_body {
         request = request.form(&payload);
@@ -151,7 +175,7 @@ async fn fetch_transform_url(
     let response = request.send().await?;
     let status_code = response.status();
 
-    if status_code == reqwest::StatusCode::OK {
+    if status_code.is_success() {
         return Ok(FetchResult::Response(transform_response(response).await?));
     }
 
@@ -194,6 +218,7 @@ async fn transform_response(response: reqwest::Response) -> Result<ClientRespons
             ClientResponse {
                 body: BodyType::Complete(bytes::Bytes::from(rewritten_html.html)),
                 content_disposition: None,
+                content_length: None,
                 content_type,
                 style_hashes: Some(rewritten_html.style_hashes),
             }
@@ -201,13 +226,22 @@ async fn transform_response(response: reqwest::Response) -> Result<ClientRespons
             ClientResponse {
                 body: BodyType::Complete(transform_css(response).await?),
                 content_disposition: None,
+                content_length: None,
                 content_type,
                 style_hashes: None,
             }
         } else {
+            let content_length =
+                if let Some(body_size) = headers.get(reqwest::header::CONTENT_LENGTH) {
+                    parse_content_length(body_size)
+                } else {
+                    None
+                };
+
             ClientResponse {
                 content_disposition: headers.get(reqwest::header::CONTENT_DISPOSITION).cloned(),
                 body: BodyType::Stream(Box::pin(response.bytes_stream())),
+                content_length,
                 content_type,
                 style_hashes: None,
             }
@@ -324,6 +358,16 @@ fn verify_hostname(
         IpAddr::V4(ip_v4) => verify_ip_v4_range(permitted_ip_range, ip_v4),
         IpAddr::V6(ip_v6) => verify_ip_v6_range(permitted_ip_range, ip_v6),
     }
+}
+
+fn parse_content_length(value: &actix_web::http::header::HeaderValue) -> Option<u64> {
+    if let Ok(utf_8_str) = value.to_str() {
+        if let Ok(content_size) = utf_8_str.parse::<u64>() {
+            return Some(content_size);
+        }
+    }
+
+    None
 }
 
 #[cfg(test)]
