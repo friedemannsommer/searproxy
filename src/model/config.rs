@@ -11,6 +11,7 @@ pub enum SocketListener {
 
 #[derive(Debug)]
 pub struct Config<'secret, 'proxy> {
+    pub connect_timeout: u8,
     pub follow_redirects: bool,
     pub hmac_secret: Cow<'secret, [u8]>,
     pub lazy_images: bool,
@@ -18,6 +19,6 @@ pub struct Config<'secret, 'proxy> {
     pub log_level: log::LevelFilter,
     pub permitted_ip_range: PermittedIpRange,
     pub proxy_address: Option<Cow<'proxy, str>>,
-    pub request_timeout: u8,
+    pub request_timeout: Option<u16>,
     pub worker_count: u8,
 }

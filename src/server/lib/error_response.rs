@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use crate::utilities::ClientError;
+use crate::utilities::{ClientError, ClientResponseBody};
 
 #[derive(serde::Serialize)]
 pub struct ErrorMessage<'name, 'description> {
@@ -8,7 +8,9 @@ pub struct ErrorMessage<'name, 'description> {
     pub description: Cow<'description, str>,
 }
 
-pub fn get_error_response(error_detail: ClientError) -> actix_web::HttpResponse {
+pub fn get_error_response(
+    error_detail: ClientError,
+) -> actix_web::HttpResponse<ClientResponseBody> {
     let mut response = actix_web::HttpResponse::with_body(
         match error_detail {
             ClientError::InvalidHash => actix_web::http::StatusCode::UNAUTHORIZED,
@@ -18,9 +20,11 @@ pub fn get_error_response(error_detail: ClientError) -> actix_web::HttpResponse 
             | ClientError::ResolveHostname(_) => actix_web::http::StatusCode::BAD_REQUEST,
             _ => actix_web::http::StatusCode::INTERNAL_SERVER_ERROR,
         },
-        actix_web::body::BoxBody::new(crate::templates::render_template_string(
-            crate::templates::Template::Error(get_error_message(error_detail)),
-        )),
+        actix_web::body::EitherBody::Right {
+            body: bytes::Bytes::from(crate::templates::render_template_string(
+                crate::templates::Template::Error(get_error_message(error_detail)),
+            )),
+        },
     );
     let headers = response.headers_mut();
 

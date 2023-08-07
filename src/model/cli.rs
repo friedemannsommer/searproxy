@@ -49,14 +49,12 @@ pub struct Cli {
     /// Examples: "http://exam.ple", "https://exam.ple", "socks5://exam.ple", "socks5h://exam.ple"
     #[clap(short, long, env = "HTTP_PROXY")]
     pub proxy_address: Option<String>,
+    /// Timeout in seconds to wait for until the connection is established.
+    #[clap(long, env = "SEARPROXY_CONNECT_TIMEOUT", default_value_t = 5)]
+    pub connect_timeout: u8,
     /// Timeout in seconds to wait for a request to complete.
-    #[clap(
-        short = 't',
-        long,
-        env = "SEARPROXY_REQUEST_TIMEOUT",
-        default_value_t = 5
-    )]
-    pub request_timeout: u8,
+    #[clap(short = 't', long, env = "SEARPROXY_REQUEST_TIMEOUT")]
+    pub request_timeout: Option<u16>,
     /// Worker thread count for handling incoming HTTP requests.
     #[clap(short = 'w', long, env = "SEARPROXY_WORKER_COUNT", default_value_t = 0)]
     pub worker_count: u8,

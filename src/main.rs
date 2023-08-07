@@ -47,6 +47,7 @@ fn get_config() -> model::Config<'static, 'static> {
     let args: model::Cli = model::Cli::parse();
 
     model::Config {
+        connect_timeout: args.connect_timeout,
         follow_redirects: args.follow_redirects,
         hmac_secret: std::borrow::Cow::Owned(
             utilities::BASE64_ENGINE

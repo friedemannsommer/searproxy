@@ -23,7 +23,6 @@ impl<'secret, 'proxy> TryFrom<Config<'secret, 'proxy>> for AppState<'secret, 'pr
         Ok(Self {
             hmac: hmac::Hmac::new_from_slice(config.hmac_secret.as_ref())?,
             request_client: {
-                let timeout = std::time::Duration::from_secs(config.request_timeout as u64);
                 let mut request_client_builder = reqwest::Client::builder()
                     .referer(false)
                     .deflate(true)
@@ -33,11 +32,15 @@ impl<'secret, 'proxy> TryFrom<Config<'secret, 'proxy>> for AppState<'secret, 'pr
                     .trust_dns(true)
                     .tcp_nodelay(true)
                     .tcp_keepalive(None)
-                    .timeout(timeout)
-                    .connect_timeout(timeout)
+                    .connect_timeout(std::time::Duration::from_secs(config.connect_timeout as u64))
                     .user_agent(
                         "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:91.0) Gecko/20100101 Firefox/91.0",
                     );
+
+                if let Some(request_timeout) = config.request_timeout {
+                    request_client_builder = request_client_builder
+                        .timeout(std::time::Duration::from_secs(request_timeout as u64));
+                }
 
                 if let Some(proxy_address) = config.proxy_address.as_deref() {
                     request_client_builder =
