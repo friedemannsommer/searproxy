@@ -17,7 +17,7 @@ searproxy [OPTIONS] --hmac-secret <HMAC_SECRET> --listen <LISTEN_ADDRESS>
 * `-l` / `--listen` - <IPv4 / IPv6>:port or socket to listen on
 * `-p` / `--proxy-address` - HTTP(s) / SOCKS5 proxy for outgoing HTTP(s) requests
 * `-s` / `--hmac-secret` - Base64 encoded string to use as HMAC 256 secret
-* `--connect-timeout` - Timeout in seconds to wait for until the connection is established 
+* `--connect-timeout` - Timeout in seconds to wait for until the connection is established (default: 5s)
 * `-t` / `--request-timeout` - Timeout in seconds to wait for a request to complete
 * `-v` / `--log-level` - Log level to use (default: WARN)
 * `-w` / `--worker-count` - Worker thread count for handling incoming HTTP requests (default: CPU core count)
@@ -34,8 +34,8 @@ searproxy [OPTIONS] --hmac-secret <HMAC_SECRET> --listen <LISTEN_ADDRESS>
 * `SEARPROXY_LISTEN` - <IPv4 / IPv6>:port or socket to listen on
 * `HTTP_PROXY` - HTTP(s) / SOCKS5 proxy for outgoing HTTP(s) requests
 * `SEARPROXY_HMAC_SECRET` - Base64 encoded string to use as HMAC 256 secret
-* `SEARPROXY_CONNECT_TIMEOUT` - Timeout in seconds to wait for until the connection is established
-* `SEARPROXY_REQUEST_TIMEOUT` - Timeout in seconds to wait for a request to complete (default: 5s)
+* `SEARPROXY_CONNECT_TIMEOUT` - Timeout in seconds to wait for until the connection is established (default: 5s)
+* `SEARPROXY_REQUEST_TIMEOUT` - Timeout in seconds to wait for a request to complete
 * `SEARPROXY_LOG_LEVEL` - Log level to use (default: WARN)
 * `SEARPROXY_WORKER_COUNT` - Worker thread count for handling incoming HTTP requests (default: CPU core count)
 * `SEARPROXY_PERMITTED_IP_RANGE` - Permitted IP (v4, v6) ranges (default: "global")
