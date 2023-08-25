@@ -35,7 +35,7 @@ default-features = false
 features = ["compress-brotli", "compress-gzip", "compress-zstd", "macros"]
 
 [dependencies.reqwest]
-version = "=0.11.19"
+version = "=0.11.20"
 default-features = false
 features = ["brotli", "socks", "gzip", "deflate", "stream", "rustls-tls", "trust-dns"]
 
