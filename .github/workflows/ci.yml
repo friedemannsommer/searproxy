@@ -32,7 +32,7 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Rust latest stable
         uses: dtolnay/rust-toolchain@master
         with:
@@ -45,7 +45,7 @@ jobs:
     name: Check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Rust latest stable
         uses: dtolnay/rust-toolchain@master
         with:
@@ -58,7 +58,7 @@ jobs:
     name: Rustfmt
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Rust latest stable
         uses: dtolnay/rust-toolchain@master
         with:
@@ -72,7 +72,7 @@ jobs:
     name: Clippy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Rust latest stable
         uses: dtolnay/rust-toolchain@master
         with:
@@ -90,7 +90,7 @@ jobs:
       contents: read
       security-events: write
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Rust latest stable
         uses: dtolnay/rust-toolchain@master
         with:
@@ -136,7 +136,7 @@ jobs:
           - target: "x86_64-pc-windows-gnu"
             binary: "searproxy.exe"
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Rust latest stable
         uses: dtolnay/rust-toolchain@master
         with:
@@ -164,7 +164,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v3
         id: download
         with:
