@@ -2,12 +2,19 @@ accepted = ["Apache-2.0", "ISC", "MIT", "MPL-2.0"]
 ignore-dev-dependencies = true
 private = { ignore = true }
 workarounds = [
-    "ring",
     "rustls",
 ]
 
 [ring]
 accepted = ["OpenSSL"]
+
+[ring.clarify]
+license = "ISC AND MIT AND OpenSSL"
+
+[[ring.clarify.files]]
+path = 'LICENSE'
+license = 'OpenSSL'
+checksum = '76b39f9b371688eac9d8323f96ee80b3aef5ecbc2217f25377bd4e4a615296a9'
 
 [alloc-no-stdlib]
 accepted = ["BSD-3-Clause"]
