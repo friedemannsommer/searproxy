@@ -1284,23 +1284,22 @@ dependencies = [
 
 [[package]]
 name = "markup"
-version = "0.13.1"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bd9196a235d499738d04f6a2466ce2610bf6b84730610efea8bee1b90d028b0d"
+checksum = "d1b254d4ee014ad72952644b3b5a907db6c51d0c9760f136713da531bd5dd590"
 dependencies = [
- "itoa 1.0.9",
  "markup-proc-macro",
 ]
 
 [[package]]
 name = "markup-proc-macro"
-version = "0.13.1"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1a927f0e237dcbdd8c1a8ab03c4e1e8b1999804c448ebf06ff3b5512506c8150"
+checksum = "69537f92a72541ce0925335f4dd3592b465a03cc757489f670f539d359593019"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 1.0.109",
+ "syn 2.0.39",
 ]
 
 [[package]]
