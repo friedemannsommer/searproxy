@@ -149,7 +149,7 @@ jobs:
         run: cargo install cross --git https://github.com/cross-rs/cross
       - name: compile with cross
         run: cross build --target ${{ matrix.target }} --release
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: "SearProxy_${{ matrix.target }}"
           path: "target/${{ matrix.target }}/release/${{ matrix.binary }}"
