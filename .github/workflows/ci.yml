@@ -234,7 +234,7 @@ jobs:
       - name: Create checksums
         run: |
           declare -A checksums
-          for filename in ./licensing/*; do
+          for filename in ./release-binaries/*; do
             [ -e "$filename" ] || continue
             checksums["$filename"]=$(sha256sum "$filename" | cut -d " " -f1)
           done
