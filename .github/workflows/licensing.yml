@@ -50,8 +50,8 @@ jobs:
           fi
       - name: Generate third party license overview
         run: cargo-about generate -o docs/licenses.html licensing/about.hbs -c licensing/about.toml
-      - uses: actions/upload-pages-artifact@v2
+      - uses: actions/upload-pages-artifact@v3
         with:
           path: 'docs'
       - name: Deploy to GitHub Pages
-        uses: actions/deploy-pages@v3
+        uses: actions/deploy-pages@v4
