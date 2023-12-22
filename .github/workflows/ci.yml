@@ -187,7 +187,7 @@ jobs:
           images: ghcr.io/${{ github.repository }}
       - name: Copy binaries to Docker context
         run: |
-          cp -r ./artifact-binaries ./packaging/docker
+          cp -r "${{ steps.download.outputs.download-path }}" ./packaging/docker
       - name: Build and push Docker image
         uses: docker/build-push-action@v5.1.0
         with:
@@ -219,7 +219,7 @@ jobs:
           )
           mkdir release-binaries
           for target in "${TARGETS[@]}"; do
-            TARGET_PATH="${{steps.download.outputs.download-path}}/SearProxy_$target/"
+            TARGET_PATH="${{ steps.download.outputs.download-path }}/SearProxy_$target/"
             TARGET_FILE=$(find "$TARGET_PATH" -maxdepth 1 -name "searproxy*" -type f)
             if [[ $target == "arm-unknown-linux-musleabihf" ]]; then
               # rename "arm" to "armv6" to explicitly state ARM version
