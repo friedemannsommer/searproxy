@@ -156,6 +156,47 @@ jobs:
           retention-days: 1
           if-no-files-found: error
 
+  build-containers:
+    name: "Build Docker containers"
+    runs-on: ubuntu-latest
+    needs:
+      - "build-release"
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        id: download
+        with:
+          path: artifact-binaries
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3.0.0
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3.0.0
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3.0.0
+        with:
+          registry: ${{ ghcr.io }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5.4.0
+        with:
+          images: ghcr.io/${{ github.repository }}
+      - name: Copy binaries to Docker context
+        run: |
+          cp ./artifact-binaries ./packaging/docker
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5.1.0
+        with:
+          context: packaging/docker
+          platforms: linux/arm64,linux/arm/v6,linux/arm/v7,linux/amd64,linux/386
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
   release:
     name: "Create release"
     runs-on: ubuntu-latest
@@ -189,6 +230,16 @@ jobs:
             else
               mv "$TARGET_FILE" "./release-binaries/searproxy_$target"
             fi
+          done
+      - name: Create checksums
+        run: |
+          declare -A checksums
+          for filename in ./licensing/*; do
+            [ -e "$filename" ] || continue
+            checksums["$filename"]=$(sha256sum "$filename" | cut -d " " -f1)
+          done
+          for key in "${!checksums[@]}"; do
+            echo "${checksums[$key]} $(basename $key)" # > "$key.sha256"
           done
       - name: Create release
         uses: "softprops/action-gh-release@v1"
