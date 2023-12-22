@@ -221,7 +221,6 @@ jobs:
           for target in "${TARGETS[@]}"; do
             TARGET_PATH="${{steps.download.outputs.download-path}}/SearProxy_$target/"
             TARGET_FILE=$(find "$TARGET_PATH" -maxdepth 1 -name "searproxy*" -type f)
-          
             if [[ $target == "arm-unknown-linux-musleabihf" ]]; then
               # rename "arm" to "armv6" to explicitly state ARM version
               mv "$TARGET_FILE" "./release-binaries/searproxy_armv6-unknown-linux-musleabihf"
@@ -239,7 +238,7 @@ jobs:
             checksums["$filename"]=$(sha256sum "$filename" | cut -d " " -f1)
           done
           for key in "${!checksums[@]}"; do
-            echo "${checksums[$key]} $(basename $key)" # > "$key.sha256"
+            echo "${checksums[$key]} $(basename $key)" > "$key.sha256"
           done
       - name: Create release
         uses: "softprops/action-gh-release@v1"
