@@ -2,6 +2,7 @@ FROM --platform=$BUILDPLATFORM debian:12.4-slim as build
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 COPY ./copy-binary.sh /opt/searproxy/scripts/copy-binary.sh
+COPY ./artifact-binaries /opt/searproxy/binaries
 RUN chmod ug+x /opt/searproxy/scripts/copy-binary.sh
 RUN /opt/searproxy/scripts/copy-binary.sh
 

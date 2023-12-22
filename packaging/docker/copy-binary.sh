@@ -9,4 +9,4 @@ case "${TARGETPLATFORM}" in
     *) exit 1 ;;
 esac;
 
-cp "./artifact-binaries/$TARGET_BINARY" /usr/local/bin/searproxy;
+cp "/opt/searproxy/binaries/$TARGET_BINARY" /usr/local/bin/searproxy;
