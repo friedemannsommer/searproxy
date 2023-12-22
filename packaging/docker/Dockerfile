@@ -9,8 +9,8 @@ RUN /opt/searproxy/scripts/copy-binary.sh
 FROM alpine:3.19.0
 ARG UID=1000
 ARG GID=1000
-COPY --from=build /usr/local/bin/searproxy /usr/local/bin/searproxy
-RUN addgroup -g "${GID}" searproxy \
-  && adduser -u "${UID}" -G "${GID}" searproxy
+RUN addgroup --gid "${GID}" searproxy \
+  && adduser --uid "${UID}" --ingroup searproxy --shell /sbin/nologin --disabled-password --no-create-home searproxy
 USER searproxy
+COPY --from=build --chown=searproxy /usr/local/bin/searproxy /usr/local/bin/searproxy
 CMD [ "/usr/local/bin/searproxy" ]
