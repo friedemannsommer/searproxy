@@ -26,7 +26,7 @@ once_cell = "=1.19.0"
 regex = "=1.10.2"
 serde = { version = "=1.0.193", features = ["derive"] }
 serde_qs = "=0.12.0"
-thiserror = "=1.0.51"
+thiserror = "=1.0.52"
 url = "=2.5.0"
 
 [dependencies.actix-web]
