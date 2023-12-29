@@ -30,7 +30,7 @@ thiserror = "=1.0.51"
 url = "=2.5.0"
 
 [dependencies.actix-web]
-version = "=4.4.0"
+version = "=4.4.1"
 default-features = false
 features = ["compress-brotli", "compress-gzip", "compress-zstd", "macros"]
 
