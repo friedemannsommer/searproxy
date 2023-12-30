@@ -1,4 +1,3 @@
-pub use ExternalLinkTemplate as ExternalLink;
 pub use Layout as Base;
 
 use crate::assets::MAIN_STYLESHEET;
