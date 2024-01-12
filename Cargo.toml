@@ -10,7 +10,7 @@ codegen-units = 1
 lto = true
 
 [dependencies]
-base64 = "=0.21.5"
+base64 = "=0.21.7"
 bytes = "=1.5.0"
 clap = { version = "=4.4.13", features = ["derive", "env"] }
 fern = "=0.6.2"
@@ -50,7 +50,7 @@ default-features = false
 features = ["std"]
 
 [build-dependencies]
-base64 = "=0.21.5"
+base64 = "=0.21.7"
 lightningcss = "=1.0.0-alpha.51"
 
 [build-dependencies.sha2]
