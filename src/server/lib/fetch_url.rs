@@ -51,7 +51,9 @@ fn handle_client_response(
     let headers = response.headers_mut();
 
     if let Some(value) = client_res.content_disposition {
-        headers.insert(actix_web::http::header::CONTENT_DISPOSITION, value);
+        if let Ok(header_value) = HeaderValue::from_bytes(value.as_ref()) {
+            headers.insert(actix_web::http::header::CONTENT_DISPOSITION, header_value);
+        }
     }
 
     if let Some(style_hashes) = client_res.style_hashes {
@@ -90,6 +92,7 @@ fn handle_client_redirect(
         actix_web::http::header::CONTENT_TYPE,
         HeaderValue::from_static(mime::TEXT_HTML_UTF_8.as_ref()),
     );
+
     response = response.set_body(actix_web::body::EitherBody::Right {
         body: bytes::Bytes::from(crate::templates::render_template_string(
             crate::templates::Template::Redirect(client_redirect),

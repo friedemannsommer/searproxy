@@ -29,7 +29,6 @@ impl<'secret, 'proxy> TryFrom<Config<'secret, 'proxy>> for AppState<'secret, 'pr
                     .gzip(true)
                     .brotli(true)
                     .redirect(reqwest::redirect::Policy::none())
-                    .trust_dns(true)
                     .tcp_nodelay(true)
                     .tcp_keepalive(None)
                     .connect_timeout(std::time::Duration::from_secs(config.connect_timeout as u64))

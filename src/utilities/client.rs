@@ -161,11 +161,12 @@ async fn fetch_transform_url(
             reqwest::header::ACCEPT_LANGUAGE,
             headers
                 .get(actix_web::http::header::ACCEPT_LANGUAGE)
-                .unwrap_or(&FALLBACK_ACCEPT_LANGUAGE),
+                .unwrap_or(&FALLBACK_ACCEPT_LANGUAGE)
+                .as_ref(),
         );
 
     if let Some(range) = headers.get(actix_web::http::header::RANGE) {
-        request = request.header(reqwest::header::RANGE, range)
+        request = request.header(reqwest::header::RANGE, range.as_ref())
     }
 
     if let Some(payload) = request_body {
@@ -360,7 +361,7 @@ fn verify_hostname(
     }
 }
 
-fn parse_content_length(value: &actix_web::http::header::HeaderValue) -> Option<u64> {
+fn parse_content_length(value: &reqwest::header::HeaderValue) -> Option<u64> {
     if let Ok(utf_8_str) = value.to_str() {
         if let Ok(content_size) = utf_8_str.parse::<u64>() {
             return Some(content_size);
