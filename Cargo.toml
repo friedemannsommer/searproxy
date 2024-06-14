@@ -17,7 +17,7 @@ fern = "=0.6.2"
 futures-util = "=0.3.30"
 hex = "=0.4.3"
 hmac = "=0.12.1"
-htmlentity = "=1.3.1"
+htmlentity = "=1.3.2"
 log = "=0.4.21"
 lol_html = "=1.2.1"
 markup = { git = "https://github.com/utkarshkukreti/markup.rs", rev = "c1dc693e0d3e312d52160c312961bf47f1cffbf7" }
