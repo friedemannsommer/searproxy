@@ -23,7 +23,7 @@ lol_html = "=1.2.1"
 markup = { git = "https://github.com/utkarshkukreti/markup.rs", rev = "c1dc693e0d3e312d52160c312961bf47f1cffbf7" }
 mime = "=0.3.17"
 once_cell = "=1.19.0"
-regex = "=1.10.4"
+regex = "=1.10.5"
 serde = { version = "=1.0.203", features = ["derive"] }
 serde_qs = "=0.13.0"
 thiserror = "=1.0.61"
