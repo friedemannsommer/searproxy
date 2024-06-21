@@ -27,7 +27,7 @@ regex = "=1.10.5"
 serde = { version = "=1.0.203", features = ["derive"] }
 serde_qs = "=0.13.0"
 thiserror = "=1.0.61"
-url = "=2.5.1"
+url = "=2.5.2"
 
 [dependencies.actix-web]
 version = "=4.8.0"
