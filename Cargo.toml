@@ -12,7 +12,7 @@ lto = true
 [dependencies]
 base64 = "=0.22.1"
 bytes = "=1.6.0"
-clap = { version = "=4.5.7", features = ["derive", "env"] }
+clap = { version = "=4.5.8", features = ["derive", "env"] }
 fern = "=0.6.2"
 futures-util = "=0.3.30"
 hex = "=0.4.3"
