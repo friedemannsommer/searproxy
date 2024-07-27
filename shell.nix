@@ -9,5 +9,5 @@ in
     packages = [
       toolchain
     ];
-    RUST_SRC_PATH = "${toolchain}/lib/rustlib/src/rust/library";
+    RUST_SRC_PATH = pkgs.rust-bin.stable.latest.rust-src;
   }
