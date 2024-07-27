@@ -6,7 +6,6 @@
     non_ascii_idents,
     nonstandard_style,
     noop_method_call,
-    pointer_structural_match,
     trivial_casts,
     trivial_numeric_casts,
     unsafe_code,
