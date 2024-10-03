@@ -37,6 +37,9 @@ accepted = ["BSD-3-Clause"]
 [unicode-ident]
 accepted = ["Unicode-DFS-2016"]
 
+[brotli]
+accepted = ["BSD-3-Clause"]
+
 [webpki.clarify]
 license = "ISC"
 
