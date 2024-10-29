@@ -9,5 +9,9 @@ in
     packages = [
       toolchain
     ];
+
+    nativeBuildInputs = [ pkgs.pkg-config ];
+  
     RUST_SRC_PATH = pkgs.rust-bin.stable.latest.rust-src;
+    LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [ ];
   }
