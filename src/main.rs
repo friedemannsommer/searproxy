@@ -71,11 +71,16 @@ fn parse_socket_listener(input: &str) -> model::SocketListener {
     }
 
     #[cfg(unix)]
-    if let Ok(path) = std::path::PathBuf::from_str(input) {
-        return model::SocketListener::Unix(path);
+    {
+        let Ok(path) = std::path::PathBuf::from_str(input);
+
+        model::SocketListener::Unix(path)
     }
 
-    panic!("Listener could not be parsed: '{input}'")
+    #[cfg(not(unix))]
+    {
+        panic!("Listener could not be parsed: '{input}'")
+    }
 }
 
 fn init_logging(config: &model::Config<'_, '_>) {
