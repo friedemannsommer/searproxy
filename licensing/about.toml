@@ -1,4 +1,4 @@
-accepted = ["Apache-2.0", "ISC", "MIT", "MPL-2.0"]
+accepted = ["Apache-2.0", "ISC", "MIT", "MPL-2.0", "Unicode-3.0"]
 ignore-dev-dependencies = true
 private = { ignore = true }
 workarounds = [
