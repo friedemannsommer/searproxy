@@ -1,3 +1,5 @@
+#![allow(clippy::needless_lifetimes)]
+
 pub use Layout as Base;
 
 use crate::assets::MAIN_STYLESHEET;
