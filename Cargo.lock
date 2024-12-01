@@ -2166,7 +2166,7 @@ checksum = "1c107b6f4780854c8b126e228ea8869f4d7b71260f962fefb57b996b8959ba6b"
 
 [[package]]
 name = "searproxy"
-version = "0.4.17"
+version = "0.4.18"
 dependencies = [
  "actix-web",
  "base64",
