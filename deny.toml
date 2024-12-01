@@ -14,14 +14,20 @@ allow = [
     "MIT",
     "Apache-2.0",
     "MPL-2.0",
-    "Unicode-3.0"
+    "Unicode-3.0",
+    "ISC"
 ]
 # [between 0.0 and 1.0].
 confidence-threshold = 0.8
 exceptions = [
+    { name = "alloc-no-stdlib", allow = ["BSD-3-Clause"] },
+    { name = "alloc-stdlib", allow = ["BSD-3-Clause"] },
+    { name = "brotli", allow = ["BSD-3-Clause"] },
     { name = "encoding_rs", allow = ["BSD-3-Clause"] },
+    { name = "lol_html", allow = ["BSD-3-Clause"] },
     { name = "ring", allow = ["LicenseRef-ring"] },
     { name = "searproxy", allow = ["AGPL-3.0"] },
+    { name = "subtle", allow = ["BSD-3-Clause"] },
 ]
 
 [[licenses.clarify]]
