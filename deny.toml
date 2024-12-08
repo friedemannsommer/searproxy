@@ -29,6 +29,7 @@ exceptions = [
     { name = "ring", allow = ["LicenseRef-ring"] },
     { name = "searproxy", allow = ["AGPL-3.0"] },
     { name = "subtle", allow = ["BSD-3-Clause"] },
+    { name = "foldhash", allow = ["Zlib"] }
 ]
 
 [[licenses.clarify]]
