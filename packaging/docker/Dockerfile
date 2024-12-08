@@ -6,7 +6,7 @@ COPY ./artifact-binaries /opt/searproxy/binaries
 RUN chmod ug+x /opt/searproxy/scripts/copy-binary.sh
 RUN /opt/searproxy/scripts/copy-binary.sh
 
-FROM alpine:3.20.3
+FROM alpine:3.21.0
 ARG UID=1000
 ARG GID=1000
 RUN addgroup --gid "${GID}" searproxy \
