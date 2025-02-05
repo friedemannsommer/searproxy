@@ -189,7 +189,7 @@ jobs:
         run: |
           cp -r "${{ steps.download.outputs.download-path }}" ./packaging/docker
       - name: Build and push Docker image
-        uses: docker/build-push-action@v6.12.0
+        uses: docker/build-push-action@v6.13.0
         with:
           context: packaging/docker
           platforms: linux/arm64,linux/arm/v6,linux/arm/v7,linux/amd64,linux/386
