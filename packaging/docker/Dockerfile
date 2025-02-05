@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM debian:12.8-slim as build
+FROM --platform=$BUILDPLATFORM debian:12.9-slim as build
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 COPY ./copy-binary.sh /opt/searproxy/scripts/copy-binary.sh
@@ -6,7 +6,7 @@ COPY ./artifact-binaries /opt/searproxy/binaries
 RUN chmod ug+x /opt/searproxy/scripts/copy-binary.sh
 RUN /opt/searproxy/scripts/copy-binary.sh
 
-FROM alpine:3.21.0
+FROM alpine:3.21.2
 ARG UID=1000
 ARG GID=1000
 RUN addgroup --gid "${GID}" searproxy \
