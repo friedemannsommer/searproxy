@@ -11,8 +11,8 @@ lto = true
 
 [dependencies]
 base64 = "=0.22.1"
-bytes = "=1.9.0"
-clap = { version = "=4.5.27", features = ["derive", "env"] }
+bytes = "=1.10.0"
+clap = { version = "=4.5.28", features = ["derive", "env"] }
 fern = "=0.7.1"
 futures-util = "=0.3.31"
 hex = "=0.4.3"
