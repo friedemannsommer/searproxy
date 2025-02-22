@@ -1,7 +1,7 @@
 use crate::templates::base::Base;
 
-pub fn index(
-) -> Base<impl std::fmt::Display + markup::Render, impl std::fmt::Display + markup::Render> {
+pub fn index()
+-> Base<impl std::fmt::Display + markup::Render, impl std::fmt::Display + markup::Render> {
     Base {
         header: markup::new! {
             h2 {

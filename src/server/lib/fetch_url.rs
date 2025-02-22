@@ -3,8 +3,8 @@ use actix_web::http::header::HeaderValue;
 use crate::{
     server::lib::get_content_security_policy,
     utilities::{
-        fetch_validate_url, ClientRedirect, ClientResponse, ClientResponseBody, FetchResult,
-        FormRequest,
+        ClientRedirect, ClientResponse, ClientResponseBody, FetchResult, FormRequest,
+        fetch_validate_url,
     },
 };
 

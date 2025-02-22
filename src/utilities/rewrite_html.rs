@@ -560,7 +560,7 @@ impl<'html> HtmlRewrite<'html> {
 mod tests {
     use std::rc::Rc;
 
-    use crate::utilities::rewrite_html::{HtmlRewrite, HEADER_STYLE_ELEMENT};
+    use crate::utilities::rewrite_html::{HEADER_STYLE_ELEMENT, HtmlRewrite};
 
     #[test]
     fn rewrite_a_href_relative_n_1() {
@@ -916,9 +916,12 @@ mod tests {
 
         assert_eq!(
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
-            format!("<head><style>\
+            format!(
+                "<head><style>\
             body{{background-image:url('./?url=https%3A%2F%2Fwww.example.com%2Fmain.css&hash=7d40cd69599262cfe009ac148491a37e9ec47dcf2386c2807bc2255fff6d5fa3')}}\
-            </style>{}</head>",HEADER_STYLE_ELEMENT.as_str())
+            </style>{}</head>",
+                HEADER_STYLE_ELEMENT.as_str()
+            )
         );
     }
 
@@ -936,10 +939,13 @@ mod tests {
 
         assert_eq!(
             std::str::from_utf8(rewriter.end().unwrap().html.as_slice()).unwrap(),
-            format!("<head><style>url('./?url=https%3A%2F%2Fwww.example.com%2Fmain.css&hash=7d40cd69599262cfe009ac148491a37e9ec47dcf2386c2807bc2255fff6d5fa3')</style>\
+            format!(
+                "<head><style>url('./?url=https%3A%2F%2Fwww.example.com%2Fmain.css&hash=7d40cd69599262cfe009ac148491a37e9ec47dcf2386c2807bc2255fff6d5fa3')</style>\
             <style>url('./?url=https%3A%2F%2Fwww.example.com%2Findex.css&hash=de26b17e7788f85987457601375a920242dee16379bd17769fe6b6fbcb90cfcf')</style>\
             <style>url('./?url=https%3A%2F%2Fwww.example.com%2Ftheme.css&hash=ddc8ae45cdbef1f3ddfc778ba578b36666f3b2541de07d5efbc1a2584a3e913c')</style>\
-            {}</head>",HEADER_STYLE_ELEMENT.as_str())
+            {}</head>",
+                HEADER_STYLE_ELEMENT.as_str()
+            )
         );
     }
 

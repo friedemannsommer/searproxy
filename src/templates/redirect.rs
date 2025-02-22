@@ -1,4 +1,4 @@
-use crate::templates::base::{self_ref, Base};
+use crate::templates::base::{Base, self_ref};
 
 pub fn redirect(
     client_redirect: crate::utilities::ClientRedirect,

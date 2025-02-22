@@ -1,4 +1,4 @@
-use crate::templates::base::{blank_ref, Base};
+use crate::templates::base::{Base, blank_ref};
 
 pub fn error<'error_detail>(
     error_detail_opt: &'error_detail Option<crate::server::lib::ErrorMessage<'_, '_>>,

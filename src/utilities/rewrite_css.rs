@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use url::Url;
 
-use crate::utilities::rewrite_url::{rewrite_url, RewriteUrlError};
+use crate::utilities::rewrite_url::{RewriteUrlError, rewrite_url};
 
 #[derive(thiserror::Error, Debug)]
 pub enum RewriteCssError {
@@ -243,7 +243,10 @@ mod tests {
 
         rewriter.write(b"url(main.css)").unwrap();
 
-        assert_eq!(std::str::from_utf8( rewriter.end().unwrap().as_slice()).unwrap(),"url(./?url=https%3A%2F%2Fwww.example.com%2Fmain.css&hash=7d40cd69599262cfe009ac148491a37e9ec47dcf2386c2807bc2255fff6d5fa3)");
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().as_slice()).unwrap(),
+            "url(./?url=https%3A%2F%2Fwww.example.com%2Fmain.css&hash=7d40cd69599262cfe009ac148491a37e9ec47dcf2386c2807bc2255fff6d5fa3)"
+        );
     }
 
     #[test]
@@ -255,7 +258,10 @@ mod tests {
 
         rewriter.write(b"url('main.css')").unwrap();
 
-        assert_eq!(std::str::from_utf8( rewriter.end().unwrap().as_slice()).unwrap(),"url('./?url=https%3A%2F%2Fwww.example.com%2Fmain.css&hash=7d40cd69599262cfe009ac148491a37e9ec47dcf2386c2807bc2255fff6d5fa3')");
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().as_slice()).unwrap(),
+            "url('./?url=https%3A%2F%2Fwww.example.com%2Fmain.css&hash=7d40cd69599262cfe009ac148491a37e9ec47dcf2386c2807bc2255fff6d5fa3')"
+        );
     }
 
     #[test]
@@ -267,7 +273,10 @@ mod tests {
 
         rewriter.write(b"url(\"main.css\")").unwrap();
 
-        assert_eq!(std::str::from_utf8( rewriter.end().unwrap().as_slice()).unwrap(),"url(\"./?url=https%3A%2F%2Fwww.example.com%2Fmain.css&hash=7d40cd69599262cfe009ac148491a37e9ec47dcf2386c2807bc2255fff6d5fa3\")");
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().as_slice()).unwrap(),
+            "url(\"./?url=https%3A%2F%2Fwww.example.com%2Fmain.css&hash=7d40cd69599262cfe009ac148491a37e9ec47dcf2386c2807bc2255fff6d5fa3\")"
+        );
     }
 
     #[test]
@@ -344,7 +353,10 @@ mod tests {
             .write(b"url('https://www.example.com/main.css')")
             .unwrap();
 
-        assert_eq!(std::str::from_utf8( rewriter.end().unwrap().as_slice()).unwrap(), "url('./?url=https%3A%2F%2Fwww.example.com%2Fmain.css&hash=7d40cd69599262cfe009ac148491a37e9ec47dcf2386c2807bc2255fff6d5fa3')");
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().as_slice()).unwrap(),
+            "url('./?url=https%3A%2F%2Fwww.example.com%2Fmain.css&hash=7d40cd69599262cfe009ac148491a37e9ec47dcf2386c2807bc2255fff6d5fa3')"
+        );
     }
 
     #[test]
@@ -379,7 +391,10 @@ mod tests {
             .write(b"url(\"https://www.example.com/main.css\")")
             .unwrap();
 
-        assert_eq!(std::str::from_utf8( rewriter.end().unwrap().as_slice()).unwrap(), "url(\"./?url=https%3A%2F%2Fwww.example.com%2Fmain.css&hash=7d40cd69599262cfe009ac148491a37e9ec47dcf2386c2807bc2255fff6d5fa3\")");
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().as_slice()).unwrap(),
+            "url(\"./?url=https%3A%2F%2Fwww.example.com%2Fmain.css&hash=7d40cd69599262cfe009ac148491a37e9ec47dcf2386c2807bc2255fff6d5fa3\")"
+        );
     }
 
     #[test]
@@ -412,6 +427,9 @@ mod tests {
             .write(b"url(https://www.example.com/main.css)")
             .unwrap();
 
-        assert_eq!(std::str::from_utf8( rewriter.end().unwrap().as_slice()).unwrap(), "url(./?url=https%3A%2F%2Fwww.example.com%2Fmain.css&hash=7d40cd69599262cfe009ac148491a37e9ec47dcf2386c2807bc2255fff6d5fa3)");
+        assert_eq!(
+            std::str::from_utf8(rewriter.end().unwrap().as_slice()).unwrap(),
+            "url(./?url=https%3A%2F%2Fwww.example.com%2Fmain.css&hash=7d40cd69599262cfe009ac148491a37e9ec47dcf2386c2807bc2255fff6d5fa3)"
+        );
     }
 }

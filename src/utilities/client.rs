@@ -5,11 +5,11 @@ use futures_util::StreamExt;
 use crate::{
     model::PermittedIpRange,
     utilities::{
+        GLOBAL_CONFIG,
         rewrite_css::{CssRewrite, RewriteCssError},
         rewrite_html::HtmlRewrite,
         rewrite_html::HtmlRewriteResult,
         rewrite_url::rewrite_url,
-        GLOBAL_CONFIG,
     },
 };
 

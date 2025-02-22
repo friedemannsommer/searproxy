@@ -1,12 +1,12 @@
 pub use client::{
-    fetch_validate_url, BodyType, ClientError, ClientRedirect, ClientResponse, ClientResponseBody,
-    FetchResult, FormRequest,
+    BodyType, ClientError, ClientRedirect, ClientResponse, ClientResponseBody, FetchResult,
+    FormRequest, fetch_validate_url,
 };
 #[cfg(test)]
 pub use shared::test_setup_hmac;
 pub use shared::{
-    HmacInstance, BASE64_ENGINE, GLOBAL_CONFIG, HEADER_VALUE_CONTENT_HTML, HEADER_VALUE_NO_CACHE,
-    HMAC, REQUEST_CLIENT,
+    BASE64_ENGINE, GLOBAL_CONFIG, HEADER_VALUE_CONTENT_HTML, HEADER_VALUE_NO_CACHE, HMAC,
+    HmacInstance, REQUEST_CLIENT,
 };
 
 mod client;

@@ -71,8 +71,11 @@ mod tests {
         crate::utilities::test_setup_hmac();
 
         assert_eq!(
-            rewrite_url(&url::Url::parse("https://www.example.com").unwrap(), "/index.html")
-                .unwrap(),
+            rewrite_url(
+                &url::Url::parse("https://www.example.com").unwrap(),
+                "/index.html"
+            )
+            .unwrap(),
             "./?url=https%3A%2F%2Fwww.example.com%2Findex.html&hash=7554946c4d3998da8be40b803c938c943f3dbbbb78958addd008b55bcacfb8c0"
         );
     }
@@ -82,8 +85,11 @@ mod tests {
         crate::utilities::test_setup_hmac();
 
         assert_eq!(
-            rewrite_url(&url::Url::parse("https://www.example.com/home/about").unwrap(), "../index.html")
-                .unwrap(),
+            rewrite_url(
+                &url::Url::parse("https://www.example.com/home/about").unwrap(),
+                "../index.html"
+            )
+            .unwrap(),
             "./?url=https%3A%2F%2Fwww.example.com%2Findex.html&hash=7554946c4d3998da8be40b803c938c943f3dbbbb78958addd008b55bcacfb8c0"
         );
     }
@@ -93,8 +99,11 @@ mod tests {
         crate::utilities::test_setup_hmac();
 
         assert_eq!(
-            rewrite_url(&url::Url::parse("https://example.com/").unwrap(), "https://www.example.com/")
-                .unwrap(),
+            rewrite_url(
+                &url::Url::parse("https://example.com/").unwrap(),
+                "https://www.example.com/"
+            )
+            .unwrap(),
             "./?url=https%3A%2F%2Fwww.example.com%2F&hash=85870232cac1676c4477f7cae4da7173ccee4002f32e89c16038547aa20175c0"
         );
     }
@@ -170,7 +179,11 @@ mod tests {
         crate::utilities::test_setup_hmac();
 
         assert_eq!(
-            rewrite_url(&url::Url::parse("https://example.com/").unwrap(), "/home/#about").unwrap(),
+            rewrite_url(
+                &url::Url::parse("https://example.com/").unwrap(),
+                "/home/#about"
+            )
+            .unwrap(),
             "./?url=https%3A%2F%2Fexample.com%2Fhome%2F&hash=3af87c981235827014507736715a403ebd2f9c875689318184ba2cc035ea3e61#about"
         );
     }
@@ -180,7 +193,11 @@ mod tests {
         crate::utilities::test_setup_hmac();
 
         assert_eq!(
-            rewrite_url(&url::Url::parse("https://example.com/").unwrap(), "https://another.example.com/#about").unwrap(),
+            rewrite_url(
+                &url::Url::parse("https://example.com/").unwrap(),
+                "https://another.example.com/#about"
+            )
+            .unwrap(),
             "./?url=https%3A%2F%2Fanother.example.com%2F&hash=743bb69ce433c306c9883528f2a7b451531362a1d41bbf6519ed97cdb81b907b#about"
         );
     }
