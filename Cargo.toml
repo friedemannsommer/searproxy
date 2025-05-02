@@ -40,12 +40,12 @@ default-features = false
 features = ["brotli", "socks", "gzip", "deflate", "stream", "rustls-tls", "trust-dns"]
 
 [target.'cfg(not(any(target_arch = "arm", target_arch = "armv7", target_family = "windows")))'.dependencies.sha2]
-version = "=0.10.8"
+version = "=0.10.9"
 default-features = false
 features = ["asm", "std"]
 
 [target.'cfg(any(target_arch = "arm", target_arch = "armv7", target_family = "windows"))'.dependencies.sha2]
-version = "=0.10.8"
+version = "=0.10.9"
 default-features = false
 features = ["std"]
 
@@ -54,6 +54,6 @@ base64 = "=0.22.1"
 lightningcss = "=1.0.0-alpha.65"
 
 [build-dependencies.sha2]
-version = "=0.10.8"
+version = "=0.10.9"
 default-features = false
 features = ["std"]
