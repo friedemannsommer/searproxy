@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM debian:12.9-slim as build
+FROM --platform=$BUILDPLATFORM debian:12.10-slim as build
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 COPY ./copy-binary.sh /opt/searproxy/scripts/copy-binary.sh
