@@ -43,6 +43,9 @@ accepted = ["BSD-3-Clause"]
 [foldhash]
 accepted = ["Zlib"]
 
+[webpki-roots]
+accepted = ["CDLA-Permissive-2.0"]
+
 [webpki.clarify]
 license = "ISC"
 
