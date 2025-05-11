@@ -7,7 +7,9 @@ targets = [
 db-path = "~/.cargo/advisory-db"
 db-urls = ["https://github.com/rustsec/advisory-db"]
 yanked = "deny"
-ignore = []
+ignore = [
+    { id = "RUSTSEC-2024-0436", reason = "lightningcss v1.0.0-alpha.66 depends on paste" }
+]
 
 [licenses]
 unused-allowed-license = "warn"
@@ -55,10 +57,7 @@ registries = []
 [bans]
 multiple-versions = "warn"
 highlight = "all"
-allow = [
-    # lightningcss v1.0.0-alpha.66 depends on "paste"
-    { name = "paste" }
-]
+allow = []
 deny = []
 skip = []
 skip-tree = []
