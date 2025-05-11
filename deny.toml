@@ -55,7 +55,10 @@ registries = []
 [bans]
 multiple-versions = "warn"
 highlight = "all"
-allow = []
+allow = [
+    # lightningcss v1.0.0-alpha.66 depends on "paste"
+    { name = "paste" }
+]
 deny = []
 skip = []
 skip-tree = []
