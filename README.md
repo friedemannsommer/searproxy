@@ -2,7 +2,13 @@
 
 A [SearX][1] / [SearXNG][2] compatible web content sanitizer proxy
 
-> This implementation is heavily inspired by [Morty](https://github.com/asciimoo/morty).
+> [Morty](https://github.com/asciimoo/morty) inspired this implementation.
+
+## Repository status
+
+Since [SearX][1] is officially deprecated since [2023/09/07](https://github.com/searx/searx/blob/276ffd3f01cdd823f75676c51231fad4040059d3/README.rst?plain=1#L3)
+and [SearXNG][2] removed the `result_proxy` configuration on [2025/05/13](https://github.com/searxng/searxng/commit/1a8884fa26bedf983516308e69b9863888cd397e),
+is there no need to maintain this repository until another such niche use-case comes up.
 
 ## Usage
 
